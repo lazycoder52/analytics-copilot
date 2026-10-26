@@ -538,6 +538,20 @@ def render_readme(metrics: dict[str, Any]) -> str:
             c_bare,
             "Bare schema (names & types only, no descriptions) + repair on",
         ),
+        *(
+            _cfg_row(configs[k], configs[k]["description"])
+            for k in (
+                "catalog_grain_notes_repair_on",
+                "grain_aware_prompt_repair_on",
+                "grain_sanity_check_repair_on",
+            )
+            if k in configs
+        ),
+        "",
+        "*Note on benchmark exposure*: The 45-question gold set (`evals/gold.jsonl`) was seen",
+        "while inspecting failure modes and tuning grain rules, whereas the 10-question held-out",
+        "set (`evals/heldout.jsonl`) was authored prior to any prompt/catalog changes and was",
+        "not seen during tuning.",
         "",
         "*Note on `full_schema_repair_on` vs. `full_schema_repair_off` and sample size",
         f"($N = 40$ answerable, $N = 5$ unanswerable)*: In Run A (`{response_model}`),",

@@ -286,6 +286,10 @@ class SecurityViolation(ValueError):
     """Raised when an SQL query violates security, AST guard, or table allowlist policies."""
 
 
+class GrainSanityViolation(SecurityViolation):
+    """Raised when a query sums a repeated-grain column without deduplicating first."""
+
+
 class QueryTimeoutError(TimeoutError):
     """Raised when an SQL query exceeds the configured timeout duration."""
 
@@ -452,6 +456,126 @@ def _validate_tables_and_ctes(ast: exp.Expression, allowlisted_tables: set[str])
             raise SecurityViolation(f"Table not in allowlist: {raw_name}")
 
 
+_REPEATED_STORE_WEEK_COLS = frozenset({"weekly_transactions"})
+_REPEATED_CHAIN_WEEK_COLS = frozenset(
+    {"avg_oil_price", "holiday_count", "non_transferred_holidays"}
+)
+_SERIES_LEVEL_TABLES = frozenset(
+    {
+        "promo_elasticity_summary",
+        "zero_sales_day_proxy_summary",
+        "perishable_volatility_summary",
+    }
+)
+
+
+def _direct_tables_in_select(select_node: exp.Select) -> dict[str, str]:
+    """Return mapping of alias_or_name -> lower_table_name referenced directly in a SELECT block."""
+    mapping: dict[str, str] = {}
+    for tbl in select_node.find_all(exp.Table):
+        if tbl.find_ancestor(exp.Select) is not select_node:
+            continue
+        tname = (tbl.name or "").lower()
+        alias = (tbl.alias or tname).lower()
+        if tname:
+            mapping[alias] = tname
+            mapping[tname] = tname
+    return mapping
+
+
+def _check_grain_sanity(ast: exp.Expression) -> None:
+    """Reject SUM over repeated-grain columns on weekly_store_family_summary or fan-out joins."""
+    # Track CTEs over weekly_store_family_summary that still group by store_nbr
+    store_grouped_chain_week_ctes: dict[str, set[str]] = {}
+    for cte in ast.find_all(exp.CTE):
+        cte_name = (cte.alias or "").lower()
+        cte_query = cte.this
+        if not cte_name or not isinstance(cte_query, exp.Select):
+            continue
+        direct_tbls = _direct_tables_in_select(cte_query)
+        if "weekly_store_family_summary" not in direct_tbls.values():
+            continue
+        group_node = cte_query.args.get("group")
+        group_cols = (
+            {c.name.lower() for c in group_node.find_all(exp.Column) if c.name}
+            if isinstance(group_node, exp.Group)
+            else set()
+        )
+        if "store_nbr" in group_cols:
+            exposed_chain_cols: set[str] = set()
+            for expr in cte_query.expressions:
+                alias_name = (expr.alias or "").lower()
+                for col in expr.find_all(exp.Column):
+                    cname = (col.name or "").lower()
+                    if cname in _REPEATED_CHAIN_WEEK_COLS:
+                        exposed_chain_cols.add(alias_name or cname)
+                        exposed_chain_cols.add(cname)
+            if exposed_chain_cols:
+                store_grouped_chain_week_ctes[cte_name] = exposed_chain_cols
+
+    for select_node in ast.find_all(exp.Select):
+        direct_tbls = _direct_tables_in_select(select_node)
+        referenced_tables = set(direct_tbls.values())
+
+        # Check all SUM(...) expressions belonging to this SELECT scope (not nested subqueries)
+        for sum_node in select_node.find_all(exp.Sum):
+            parent_select = sum_node.find_ancestor(exp.Select)
+            if parent_select is not select_node:
+                continue
+            for col in sum_node.find_all(exp.Column):
+                col_name = (col.name or "").lower()
+                col_table = (col.table or "").lower()
+
+                # Rule 1: Direct SUM over repeated store-week or chain-week columns
+                if "weekly_store_family_summary" in referenced_tables:
+                    resolved_tbl = direct_tbls.get(col_table, "weekly_store_family_summary")
+                    if resolved_tbl == "weekly_store_family_summary":
+                        if col_name in _REPEATED_STORE_WEEK_COLS:
+                            raise GrainSanityViolation(
+                                f"GrainSanityViolation: SUM({col_name}) directly over "
+                                "weekly_store_family_summary double-counts store transactions "
+                                "across all 33 product families per store-week. First deduplicate "
+                                "in a CTE (e.g., SELECT store_nbr, week_start_date, "
+                                f"MAX({col_name}) AS wk_tx FROM weekly_store_family_summary "
+                                "GROUP BY store_nbr, week_start_date) and then SUM(wk_tx) in the "
+                                "outer query."
+                            )
+                        if col_name in _REPEATED_CHAIN_WEEK_COLS:
+                            raise GrainSanityViolation(
+                                f"GrainSanityViolation: SUM({col_name}) directly over "
+                                "weekly_store_family_summary multiplies a chain-wide weekly figure "
+                                "across all store-family rows. First deduplicate by "
+                                "week_start_date in a CTE (SELECT week_start_date, "
+                                f"MAX({col_name}) AS wk_val FROM weekly_store_family_summary "
+                                "GROUP BY week_start_date) and then SUM(wk_val) in the outer query."
+                            )
+
+                # Rule 2: SUM over chain-week column from a CTE that grouped by store_nbr
+                for cte_name, bad_cols in store_grouped_chain_week_ctes.items():
+                    if cte_name in referenced_tables and col_name in bad_cols:
+                        raise GrainSanityViolation(
+                            f"GrainSanityViolation: SUM({col_name}) over CTE '{cte_name}' "
+                            "multiplies a chain-wide weekly figure across stores because "
+                            f"'{cte_name}' grouped by store_nbr. Deduplicate by week_start_date "
+                            "only (without store_nbr) in the CTE before summing."
+                        )
+
+                # Rule 3: Joining weekly_store_family_summary directly with a series-level table
+                # and summing a series-level column without pre-aggregating weekly rows
+                if "weekly_store_family_summary" in referenced_tables and (
+                    referenced_tables & _SERIES_LEVEL_TABLES
+                ):
+                    resolved_tbl = direct_tbls.get(col_table, "")
+                    if resolved_tbl in _SERIES_LEVEL_TABLES:
+                        raise GrainSanityViolation(
+                            f"GrainSanityViolation: SUM({col.sql()}) in a query joining "
+                            f"weekly_store_family_summary directly with {resolved_tbl} fans out "
+                            "series-level rows across weeks. Pre-aggregate "
+                            "weekly_store_family_summary by (store_nbr, family) in a CTE before "
+                            f"joining to {resolved_tbl}."
+                        )
+
+
 def _inject_limit_if_absent(ast: exp.Expression, default_limit: int) -> exp.Expression:
     """Inject a LIMIT clause if the outermost query lacks one."""
     if (
@@ -466,6 +590,8 @@ def validate_and_rewrite_sql(
     sql: str,
     allowlisted_tables: Sequence[str] | set[str] | None = None,
     default_limit: int = DEFAULT_LIMIT,
+    *,
+    check_grain_sanity: bool = False,
 ) -> str:
     """Parse, validate, guard, and rewrite an SQL query string.
 
@@ -522,6 +648,8 @@ def validate_and_rewrite_sql(
         allowed = {t.lower() for t in allowlisted_tables}
 
     _validate_tables_and_ctes(ast, allowed)
+    if check_grain_sanity:
+        _check_grain_sanity(ast)
 
     ast_with_limit = _inject_limit_if_absent(ast, default_limit)
 
@@ -534,6 +662,8 @@ def execute_guarded_sql(
     allowlisted_tables: Sequence[str] | set[str] | None = None,
     default_limit: int = DEFAULT_LIMIT,
     timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
+    *,
+    check_grain_sanity: bool = False,
 ) -> ExecutionResult:
     """Validate, rewrite, and safely execute a query against DuckDB with timeout protection.
 
@@ -552,7 +682,12 @@ def execute_guarded_sql(
         QueryTimeoutError: If execution exceeds timeout_seconds.
         duckdb.Error: If the SQL fails execution in DuckDB.
     """
-    guarded_sql = validate_and_rewrite_sql(sql, allowlisted_tables, default_limit)
+    guarded_sql = validate_and_rewrite_sql(
+        sql,
+        allowlisted_tables,
+        default_limit,
+        check_grain_sanity=check_grain_sanity,
+    )
 
     timer = threading.Timer(timeout_seconds, con.interrupt)
     timer.daemon = True
