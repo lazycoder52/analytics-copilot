@@ -303,6 +303,48 @@ def _render_difficulty_section(metrics: dict[str, Any]) -> list[str]:
     ]
 
 
+def _render_heldout_section(metrics: dict[str, Any]) -> list[str]:
+    heldout = metrics.get("heldout_evaluation")
+    if not heldout:
+        return []
+    h_cfgs = heldout.get("configurations", {})
+    if not h_cfgs:
+        return []
+    response_model = heldout.get("response_model", heldout.get("model", metrics["model"]))
+    lines = [
+        "",
+        f"### Held-Out Set Evaluation (`evals/heldout.jsonl` — `{response_model}`)",
+        "",
+        (
+            "The 10-question held-out benchmark (`evals/heldout.jsonl`: 4 `medium`, 6 `hard`, "
+            "marked `needs human review` in `docs/GOLD_REVIEW.md`) was authored before any "
+            "grain-aware prompt or sanity-check modifications. Note: the 45-question gold set "
+            "(`evals/gold.jsonl`) was seen while inspecting failure modes, whereas the 10-question "
+            "held-out set (`evals/heldout.jsonl`) was not."
+        ),
+        "",
+        (
+            "| Configuration | Description | Execution Accuracy | 95% Wilson CI | Medium (4) "
+            "| Hard (6) | Valid-SQL Rate | Mean Attempts | Total Tokens |"
+        ),
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+    ]
+    for cfg_name, cfg in h_cfgs.items():
+        n_ans = cfg["n_answerable"]
+        d_med = cfg["by_difficulty"]["medium"]
+        d_hard = cfg["by_difficulty"]["hard"]
+        lines.append(
+            f"| `{cfg_name}` | {cfg['description']} "
+            f"| {cfg['execution_correct']}/{n_ans} ({_fmt_pct(cfg['execution_accuracy'])}) "
+            f"| `{_fmt_ci(cfg['execution_accuracy_wilson_95_ci'])}` "
+            f"| {d_med['correct']}/{d_med['total']} ({_fmt_pct(d_med['accuracy'])}) "
+            f"| {d_hard['correct']}/{d_hard['total']} ({_fmt_pct(d_hard['accuracy'])}) "
+            f"| {cfg['valid_sql_count']}/{n_ans} ({_fmt_pct(cfg['valid_sql_rate'])}) "
+            f"| {cfg['mean_attempts']:.3f} | {cfg['total_tokens']} |"
+        )
+    return lines
+
+
 def render_readme(metrics: dict[str, Any]) -> str:
     """Render the full project README.md using exact figures from `metrics/metrics.json`."""
     hl = metrics["headline"]
@@ -513,6 +555,7 @@ def render_readme(metrics: dict[str, Any]) -> str:
         "population difference.",
         "",
         *_render_difficulty_section(metrics),
+        *_render_heldout_section(metrics),
         "",
         "## Failure Analysis",
         "",
