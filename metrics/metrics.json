@@ -45,6 +45,9 @@
       "description": "Schema with table/column descriptions + bounded self-repair (up to 2 repairs)",
       "max_repairs": 2,
       "include_descriptions": true,
+      "include_grain_notes": false,
+      "grain_aware_prompt": false,
+      "check_grain_sanity": false,
       "n_total": 45,
       "n_completed": 45,
       "n_unresolved": 0,
@@ -565,6 +568,9 @@
       "description": "Schema with table/column descriptions + repair loop disabled (0 repairs)",
       "max_repairs": 0,
       "include_descriptions": true,
+      "include_grain_notes": false,
+      "grain_aware_prompt": false,
+      "check_grain_sanity": false,
       "n_total": 45,
       "n_completed": 45,
       "n_unresolved": 0,
@@ -1085,6 +1091,9 @@
       "description": "Bare schema (table/column names and types only, no descriptions) + repair on",
       "max_repairs": 2,
       "include_descriptions": false,
+      "include_grain_notes": false,
+      "grain_aware_prompt": false,
+      "check_grain_sanity": false,
       "n_total": 45,
       "n_completed": 45,
       "n_unresolved": 0,
@@ -1673,6 +1682,1409 @@
           "error": null
         }
       ]
+    },
+    "catalog_grain_notes_repair_on": {
+      "config": "catalog_grain_notes_repair_on",
+      "description": "Full schema + explicit table grain/fan-out notes in catalog.py + repair on",
+      "max_repairs": 2,
+      "include_descriptions": true,
+      "include_grain_notes": true,
+      "grain_aware_prompt": false,
+      "check_grain_sanity": false,
+      "n_total": 45,
+      "n_completed": 0,
+      "n_unresolved": 45,
+      "unresolved_questions": [
+        "easy_01",
+        "easy_02",
+        "easy_03",
+        "easy_04",
+        "easy_05",
+        "easy_06",
+        "easy_07",
+        "easy_08",
+        "easy_09",
+        "easy_10",
+        "med_01",
+        "med_02",
+        "med_03",
+        "med_04",
+        "med_05",
+        "med_06",
+        "med_07",
+        "med_08",
+        "med_09",
+        "med_10",
+        "med_11",
+        "med_12",
+        "med_13",
+        "med_14",
+        "med_15",
+        "med_16",
+        "med_17",
+        "med_18",
+        "med_19",
+        "med_20",
+        "hard_01",
+        "hard_02",
+        "hard_03",
+        "hard_04",
+        "hard_05",
+        "hard_06",
+        "hard_07",
+        "hard_08",
+        "hard_09",
+        "hard_10",
+        "unans_01",
+        "unans_02",
+        "unans_03",
+        "unans_04",
+        "unans_05"
+      ],
+      "infrastructure_failures_count": 45,
+      "infrastructure_failures": [
+        {
+          "id": "easy_01",
+          "difficulty": "easy",
+          "question": "How many total rows are in the weekly_store_family_summary table?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=3112d8e4fb9d... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "easy_02",
+          "difficulty": "easy",
+          "question": "How many distinct stores are represented in weekly_store_family_summary?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=c03c8245553b... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "easy_03",
+          "difficulty": "easy",
+          "question": "How many distinct product families exist in weekly_store_family_summary?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=ffc924635e0b... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "easy_04",
+          "difficulty": "easy",
+          "question": "What are the earliest and latest week_start_date values in weekly_store_family_summary?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=fac3f72ea669... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "easy_05",
+          "difficulty": "easy",
+          "question": "How many store-family series are evaluated in promo_elasticity_summary?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=afcfa8b87f2d... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "easy_06",
+          "difficulty": "easy",
+          "question": "How many store-family series in perishable_volatility_summary are classified as PERISHABLE?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=b2fce8e023b1... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "easy_07",
+          "difficulty": "easy",
+          "question": "How many rows are in sim_policy_summary?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=8b0627a1e8cf... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "easy_08",
+          "difficulty": "easy",
+          "question": "What are the distinct replenishment lead times (lead_time_days) in sim_policy_summary, ordered ascending?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=cbf41a3a0331... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "easy_09",
+          "difficulty": "easy",
+          "question": "How many series in zero_sales_day_proxy_summary fall into the HIGH_VELOCITY_ELEVATED_ZERO_SALES_DAYS_PROXY tier?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=69da9f73f865... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "easy_10",
+          "difficulty": "easy",
+          "question": "Which city and state does store 1 belong to in weekly_store_family_summary?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=819e70b2044e... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "med_01",
+          "difficulty": "medium",
+          "question": "Which 5 product families have the highest total unit sales across all weeks in weekly_store_family_summary?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=28a6fc857327... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "med_02",
+          "difficulty": "medium",
+          "question": "Which 5 cities have the highest total unit sales in weekly_store_family_summary?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=2d64655341d9... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "med_03",
+          "difficulty": "medium",
+          "question": "What is the number of distinct stores and total unit sales for each store_type in weekly_store_family_summary, ordered by store_type?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=9f9d14dc3478... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "med_04",
+          "difficulty": "medium",
+          "question": "Which 5 store-family series in promo_elasticity_summary have the highest empirical_promo_lift_pct?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=8c61288f36e5... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "med_05",
+          "difficulty": "medium",
+          "question": "For each product family in promo_elasticity_summary with at least 20 evaluated series, what is the average empirical_promo_lift_pct, ordered highest first (top 5)?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=63ece8f3a96f... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "med_06",
+          "difficulty": "medium",
+          "question": "How many store-family series belong to each zero_sales_proxy_tier in zero_sales_day_proxy_summary, ordered by count descending?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=de020b3a990b... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "med_07",
+          "difficulty": "medium",
+          "question": "Which 5 HIGH_VELOCITY_ELEVATED_ZERO_SALES_DAYS_PROXY series in zero_sales_day_proxy_summary have the highest zero_sales_rate_pct?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=1e6ce5b206c9... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "med_08",
+          "difficulty": "medium",
+          "question": "In perishable_volatility_summary, what is the average cv_demand and series count for each volatility_proxy_tier?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=0ebf24b83b3c... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "med_09",
+          "difficulty": "medium",
+          "question": "Among PERISHABLE families in perishable_volatility_summary, what is the average cv_demand per family, ordered highest first?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=4a680e9b6f95... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "med_10",
+          "difficulty": "medium",
+          "question": "Which 5 PERISHABLE store-family series in perishable_volatility_summary have the highest volatility_exposure_index?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=ca557bcc53d8... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "med_11",
+          "difficulty": "medium",
+          "question": "In sim_policy_summary, for lead_time_days = 3 and z_value = 0.0, what are the fill_rate_pct and average_inventory_units for each policy, ordered by fill_rate_pct descending?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=d9e8a12c7e03... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "med_12",
+          "difficulty": "medium",
+          "question": "In sim_policy_summary, which rows achieve a fill_rate_pct of at least 99.0 at lead_time_days = 7, ordered by average_inventory_units ascending?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=ecfa42c7ee37... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "med_13",
+          "difficulty": "medium",
+          "question": "What was the total unit sales in weekly_store_family_summary for each calendar year of week_start_date, ordered by year?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=b0fd1561b239... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "med_14",
+          "difficulty": "medium",
+          "question": "What is the chain-wide average of avg_oil_price by calendar year in weekly_store_family_summary?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=bbd91dc449b4... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "med_15",
+          "difficulty": "medium",
+          "question": "How many distinct weeks in weekly_store_family_summary had at least one non-transferred holiday (non_transferred_holidays > 0)?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=1d6267e53e1a... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "med_16",
+          "difficulty": "medium",
+          "question": "Which 5 stores in Quito had the highest total unit sales of GROCERY I in weekly_store_family_summary?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=5126d01b035f... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "med_17",
+          "difficulty": "medium",
+          "question": "In promo_elasticity_summary, how many store-family series have negative empirical_promo_lift_pct (lower average sales on promotion days than non-promotion days)?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=078db8510fe5... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "med_18",
+          "difficulty": "medium",
+          "question": "Which 5 states have the highest number of distinct stores in weekly_store_family_summary?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=f14012b4a56e... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "med_19",
+          "difficulty": "medium",
+          "question": "In zero_sales_day_proxy_summary, what is the average zero_sales_rate_pct for each store_type, ordered by average rate descending?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=e8f3ff1e0fa4... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "med_20",
+          "difficulty": "medium",
+          "question": "In sim_policy_summary, what are the minimum and maximum inventory_turns across all rows for each lead_time_days?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=2f9452816542... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "hard_01",
+          "difficulty": "hard",
+          "question": "Without double counting across product families, which 5 stores had the highest total weekly_transactions across all weeks in weekly_store_family_summary?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=9eea7b2c322b... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "hard_02",
+          "difficulty": "hard",
+          "question": "For each store_type in weekly_store_family_summary, which single store has the highest total unit sales (rank 1 per store_type)?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=fa57128af3be... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "hard_03",
+          "difficulty": "hard",
+          "question": "Join promo_elasticity_summary and perishable_volatility_summary on store_nbr and family: for PERISHABLE series, what is the average empirical_promo_lift_pct and average cv_demand for each volatility_proxy_tier?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=112279919e68... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "hard_04",
+          "difficulty": "hard",
+          "question": "Join zero_sales_day_proxy_summary and perishable_volatility_summary on store_nbr and family: which 5 HIGH_VOLATILITY_PERISHABLE_PROXY series have the highest zero_sales_rate_pct?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=04f3397a0cd0... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "hard_05",
+          "difficulty": "hard",
+          "question": "What share of chain-wide unit sales in weekly_store_family_summary comes from each of the top 5 product families (as a percentage of all unit sales across all families)?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=4b99ed5adfbf... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "hard_06",
+          "difficulty": "hard",
+          "question": "In sim_policy_summary, at service_level = 0.95 (where is_sensitivity_extrapolation is FALSE), how many average_inventory_units does lightgbm_point_safety_stock save compared with seasonal_naive_safety_stock for each lead_time_days?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=51d223fa023c... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "hard_07",
+          "difficulty": "hard",
+          "question": "Using a window function or CTE over weekly_store_family_summary, what was the year-over-year percentage change in total chain-wide unit sales from 2014 to 2015 and from 2015 to 2016?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=dea3fa6fc209... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "hard_08",
+          "difficulty": "hard",
+          "question": "Compare chain-wide weekly unit sales in weeks with oil price below 50 vs weeks with oil price of 50 or above: what is the number of weeks and average weekly chain sales in each regime?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=b1fd4146499f... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "hard_09",
+          "difficulty": "hard",
+          "question": "Across all three series-level summary tables (promo_elasticity_summary, zero_sales_day_proxy_summary, perishable_volatility_summary), how many store-family pairs appear in all three tables simultaneously?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=1fde6967286f... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "hard_10",
+          "difficulty": "hard",
+          "question": "For each city, which product family has the highest average promo_day_share_pct in promo_elasticity_summary (return the top 5 cities alphabetically with their rank-1 family)?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=d9467d6f372d... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "unans_01",
+          "difficulty": "unanswerable",
+          "question": "What was the average unit retail price in dollars charged for PRODUCE in Quito stores during 2016?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=0870bfa113f5... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "unans_02",
+          "difficulty": "unanswerable",
+          "question": "How many units of DAIRY were lost to physical spoilage and shrinkage in Guayaquil stores?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=f19326e2045d... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "unans_03",
+          "difficulty": "unanswerable",
+          "question": "Which store had the highest gross profit margin and net operating income in 2017?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=333d5d55e3d3... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "unans_04",
+          "difficulty": "unanswerable",
+          "question": "How many unique loyalty card customers shopped at store 44 more than three times a week?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=42ffe95f83c6... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "unans_05",
+          "difficulty": "unanswerable",
+          "question": "Which supplier had the longest average delivery delay for frozen foods in Ambato?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=1d3d14828191... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        }
+      ],
+      "n_answerable": 0,
+      "n_unanswerable": 0,
+      "execution_correct": 0,
+      "execution_accuracy": 0.0,
+      "execution_accuracy_wilson_95_ci": [
+        0.0,
+        0.0
+      ],
+      "valid_sql_count": 0,
+      "valid_sql_rate": 0.0,
+      "valid_sql_wilson_95_ci": [
+        0.0,
+        0.0
+      ],
+      "refusal_correct": 0,
+      "refusal_accuracy": 0.0,
+      "refusal_wilson_95_ci": [
+        0.0,
+        0.0
+      ],
+      "mean_attempts": 0.0,
+      "latency_p50_ms": 0.0,
+      "latency_p95_ms": 0.0,
+      "total_tokens": null,
+      "by_difficulty": {
+        "easy": {
+          "correct": 0,
+          "total": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            0.0
+          ]
+        },
+        "medium": {
+          "correct": 0,
+          "total": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            0.0
+          ]
+        },
+        "hard": {
+          "correct": 0,
+          "total": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "failure_counts": {
+        "wrong_join_or_aggregation": 0,
+        "wrong_column_semantics": 0,
+        "hallucinated_table_or_column": 0,
+        "syntax_error": 0,
+        "ambiguity": 0,
+        "guard_blocked": 0,
+        "timeout": 0
+      },
+      "failed_questions": []
+    },
+    "grain_aware_prompt_repair_on": {
+      "config": "grain_aware_prompt_repair_on",
+      "description": "Full schema + catalog grain notes + grain-aware prompt checklist + repair on",
+      "max_repairs": 2,
+      "include_descriptions": true,
+      "include_grain_notes": true,
+      "grain_aware_prompt": true,
+      "check_grain_sanity": false,
+      "n_total": 45,
+      "n_completed": 0,
+      "n_unresolved": 45,
+      "unresolved_questions": [
+        "easy_01",
+        "easy_02",
+        "easy_03",
+        "easy_04",
+        "easy_05",
+        "easy_06",
+        "easy_07",
+        "easy_08",
+        "easy_09",
+        "easy_10",
+        "med_01",
+        "med_02",
+        "med_03",
+        "med_04",
+        "med_05",
+        "med_06",
+        "med_07",
+        "med_08",
+        "med_09",
+        "med_10",
+        "med_11",
+        "med_12",
+        "med_13",
+        "med_14",
+        "med_15",
+        "med_16",
+        "med_17",
+        "med_18",
+        "med_19",
+        "med_20",
+        "hard_01",
+        "hard_02",
+        "hard_03",
+        "hard_04",
+        "hard_05",
+        "hard_06",
+        "hard_07",
+        "hard_08",
+        "hard_09",
+        "hard_10",
+        "unans_01",
+        "unans_02",
+        "unans_03",
+        "unans_04",
+        "unans_05"
+      ],
+      "infrastructure_failures_count": 45,
+      "infrastructure_failures": [
+        {
+          "id": "easy_01",
+          "difficulty": "easy",
+          "question": "How many total rows are in the weekly_store_family_summary table?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=154050540ace... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "easy_02",
+          "difficulty": "easy",
+          "question": "How many distinct stores are represented in weekly_store_family_summary?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=1c7868db6489... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "easy_03",
+          "difficulty": "easy",
+          "question": "How many distinct product families exist in weekly_store_family_summary?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=ec05ca6598c6... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "easy_04",
+          "difficulty": "easy",
+          "question": "What are the earliest and latest week_start_date values in weekly_store_family_summary?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=54305373d813... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "easy_05",
+          "difficulty": "easy",
+          "question": "How many store-family series are evaluated in promo_elasticity_summary?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=418705874cc5... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "easy_06",
+          "difficulty": "easy",
+          "question": "How many store-family series in perishable_volatility_summary are classified as PERISHABLE?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=e0220dcb6e91... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "easy_07",
+          "difficulty": "easy",
+          "question": "How many rows are in sim_policy_summary?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=2953a1d46abe... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "easy_08",
+          "difficulty": "easy",
+          "question": "What are the distinct replenishment lead times (lead_time_days) in sim_policy_summary, ordered ascending?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=225a2212dd32... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "easy_09",
+          "difficulty": "easy",
+          "question": "How many series in zero_sales_day_proxy_summary fall into the HIGH_VELOCITY_ELEVATED_ZERO_SALES_DAYS_PROXY tier?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=92a338fddbe9... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "easy_10",
+          "difficulty": "easy",
+          "question": "Which city and state does store 1 belong to in weekly_store_family_summary?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=9a6bfa7b7d3a... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "med_01",
+          "difficulty": "medium",
+          "question": "Which 5 product families have the highest total unit sales across all weeks in weekly_store_family_summary?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=0240f82af0bc... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "med_02",
+          "difficulty": "medium",
+          "question": "Which 5 cities have the highest total unit sales in weekly_store_family_summary?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=b716c207ddf3... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "med_03",
+          "difficulty": "medium",
+          "question": "What is the number of distinct stores and total unit sales for each store_type in weekly_store_family_summary, ordered by store_type?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=18af0cd9da95... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "med_04",
+          "difficulty": "medium",
+          "question": "Which 5 store-family series in promo_elasticity_summary have the highest empirical_promo_lift_pct?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=aef2f8273402... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "med_05",
+          "difficulty": "medium",
+          "question": "For each product family in promo_elasticity_summary with at least 20 evaluated series, what is the average empirical_promo_lift_pct, ordered highest first (top 5)?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=9b316f06e8bc... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "med_06",
+          "difficulty": "medium",
+          "question": "How many store-family series belong to each zero_sales_proxy_tier in zero_sales_day_proxy_summary, ordered by count descending?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=685ae48bf12d... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "med_07",
+          "difficulty": "medium",
+          "question": "Which 5 HIGH_VELOCITY_ELEVATED_ZERO_SALES_DAYS_PROXY series in zero_sales_day_proxy_summary have the highest zero_sales_rate_pct?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=4d1b48a48400... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "med_08",
+          "difficulty": "medium",
+          "question": "In perishable_volatility_summary, what is the average cv_demand and series count for each volatility_proxy_tier?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=0aaa11cd9e8a... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "med_09",
+          "difficulty": "medium",
+          "question": "Among PERISHABLE families in perishable_volatility_summary, what is the average cv_demand per family, ordered highest first?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=cfebb3e269ee... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "med_10",
+          "difficulty": "medium",
+          "question": "Which 5 PERISHABLE store-family series in perishable_volatility_summary have the highest volatility_exposure_index?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=2103e5df389c... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "med_11",
+          "difficulty": "medium",
+          "question": "In sim_policy_summary, for lead_time_days = 3 and z_value = 0.0, what are the fill_rate_pct and average_inventory_units for each policy, ordered by fill_rate_pct descending?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=9fc5c021bcb3... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "med_12",
+          "difficulty": "medium",
+          "question": "In sim_policy_summary, which rows achieve a fill_rate_pct of at least 99.0 at lead_time_days = 7, ordered by average_inventory_units ascending?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=24f72a58c19e... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "med_13",
+          "difficulty": "medium",
+          "question": "What was the total unit sales in weekly_store_family_summary for each calendar year of week_start_date, ordered by year?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=3269df5da020... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "med_14",
+          "difficulty": "medium",
+          "question": "What is the chain-wide average of avg_oil_price by calendar year in weekly_store_family_summary?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=f0d4404a2e1a... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "med_15",
+          "difficulty": "medium",
+          "question": "How many distinct weeks in weekly_store_family_summary had at least one non-transferred holiday (non_transferred_holidays > 0)?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=6c4d8e76dd0e... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "med_16",
+          "difficulty": "medium",
+          "question": "Which 5 stores in Quito had the highest total unit sales of GROCERY I in weekly_store_family_summary?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=ec1fb4327602... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "med_17",
+          "difficulty": "medium",
+          "question": "In promo_elasticity_summary, how many store-family series have negative empirical_promo_lift_pct (lower average sales on promotion days than non-promotion days)?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=760a5adb2c18... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "med_18",
+          "difficulty": "medium",
+          "question": "Which 5 states have the highest number of distinct stores in weekly_store_family_summary?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=f238f46d97ec... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "med_19",
+          "difficulty": "medium",
+          "question": "In zero_sales_day_proxy_summary, what is the average zero_sales_rate_pct for each store_type, ordered by average rate descending?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=8dcc5d4691bf... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "med_20",
+          "difficulty": "medium",
+          "question": "In sim_policy_summary, what are the minimum and maximum inventory_turns across all rows for each lead_time_days?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=17c3d5324ff8... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "hard_01",
+          "difficulty": "hard",
+          "question": "Without double counting across product families, which 5 stores had the highest total weekly_transactions across all weeks in weekly_store_family_summary?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=c2ab012303cd... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "hard_02",
+          "difficulty": "hard",
+          "question": "For each store_type in weekly_store_family_summary, which single store has the highest total unit sales (rank 1 per store_type)?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=e2ac196e7d34... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "hard_03",
+          "difficulty": "hard",
+          "question": "Join promo_elasticity_summary and perishable_volatility_summary on store_nbr and family: for PERISHABLE series, what is the average empirical_promo_lift_pct and average cv_demand for each volatility_proxy_tier?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=3d053235d28e... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "hard_04",
+          "difficulty": "hard",
+          "question": "Join zero_sales_day_proxy_summary and perishable_volatility_summary on store_nbr and family: which 5 HIGH_VOLATILITY_PERISHABLE_PROXY series have the highest zero_sales_rate_pct?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=9bfe9d7c3b7b... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "hard_05",
+          "difficulty": "hard",
+          "question": "What share of chain-wide unit sales in weekly_store_family_summary comes from each of the top 5 product families (as a percentage of all unit sales across all families)?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=01b7d0395cd4... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "hard_06",
+          "difficulty": "hard",
+          "question": "In sim_policy_summary, at service_level = 0.95 (where is_sensitivity_extrapolation is FALSE), how many average_inventory_units does lightgbm_point_safety_stock save compared with seasonal_naive_safety_stock for each lead_time_days?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=2ca2b72fb19b... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "hard_07",
+          "difficulty": "hard",
+          "question": "Using a window function or CTE over weekly_store_family_summary, what was the year-over-year percentage change in total chain-wide unit sales from 2014 to 2015 and from 2015 to 2016?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=9a8e51aa7b7a... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "hard_08",
+          "difficulty": "hard",
+          "question": "Compare chain-wide weekly unit sales in weeks with oil price below 50 vs weeks with oil price of 50 or above: what is the number of weeks and average weekly chain sales in each regime?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=3f33648462a6... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "hard_09",
+          "difficulty": "hard",
+          "question": "Across all three series-level summary tables (promo_elasticity_summary, zero_sales_day_proxy_summary, perishable_volatility_summary), how many store-family pairs appear in all three tables simultaneously?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=43ce681a5987... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "hard_10",
+          "difficulty": "hard",
+          "question": "For each city, which product family has the highest average promo_day_share_pct in promo_elasticity_summary (return the top 5 cities alphabetically with their rank-1 family)?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=5402dffb0660... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "unans_01",
+          "difficulty": "unanswerable",
+          "question": "What was the average unit retail price in dollars charged for PRODUCE in Quito stores during 2016?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=7d3b33ddef64... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "unans_02",
+          "difficulty": "unanswerable",
+          "question": "How many units of DAIRY were lost to physical spoilage and shrinkage in Guayaquil stores?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=0c5171a0ce38... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "unans_03",
+          "difficulty": "unanswerable",
+          "question": "Which store had the highest gross profit margin and net operating income in 2017?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=0f8899de424a... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "unans_04",
+          "difficulty": "unanswerable",
+          "question": "How many unique loyalty card customers shopped at store 44 more than three times a week?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=8d964c71e07b... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        },
+        {
+          "id": "unans_05",
+          "difficulty": "unanswerable",
+          "question": "Which supplier had the longest average delivery delay for frozen foods in Ambato?",
+          "attempts": 1,
+          "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=eb2be714b9e5... in openai_compatible_openai_gpt-oss-120b.jsonl."
+        }
+      ],
+      "n_answerable": 0,
+      "n_unanswerable": 0,
+      "execution_correct": 0,
+      "execution_accuracy": 0.0,
+      "execution_accuracy_wilson_95_ci": [
+        0.0,
+        0.0
+      ],
+      "valid_sql_count": 0,
+      "valid_sql_rate": 0.0,
+      "valid_sql_wilson_95_ci": [
+        0.0,
+        0.0
+      ],
+      "refusal_correct": 0,
+      "refusal_accuracy": 0.0,
+      "refusal_wilson_95_ci": [
+        0.0,
+        0.0
+      ],
+      "mean_attempts": 0.0,
+      "latency_p50_ms": 0.0,
+      "latency_p95_ms": 0.0,
+      "total_tokens": null,
+      "by_difficulty": {
+        "easy": {
+          "correct": 0,
+          "total": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            0.0
+          ]
+        },
+        "medium": {
+          "correct": 0,
+          "total": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            0.0
+          ]
+        },
+        "hard": {
+          "correct": 0,
+          "total": 0,
+          "accuracy": 0.0,
+          "wilson_95_ci": [
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "failure_counts": {
+        "wrong_join_or_aggregation": 0,
+        "wrong_column_semantics": 0,
+        "hallucinated_table_or_column": 0,
+        "syntax_error": 0,
+        "ambiguity": 0,
+        "guard_blocked": 0,
+        "timeout": 0
+      },
+      "failed_questions": []
+    },
+    "grain_sanity_check_repair_on": {
+      "config": "grain_sanity_check_repair_on",
+      "description": "Full schema + SUM-over-repeated-grain AST sanity check repair trigger",
+      "max_repairs": 2,
+      "include_descriptions": true,
+      "include_grain_notes": false,
+      "grain_aware_prompt": false,
+      "check_grain_sanity": true,
+      "n_total": 45,
+      "n_completed": 45,
+      "n_unresolved": 0,
+      "unresolved_questions": [],
+      "infrastructure_failures_count": 0,
+      "infrastructure_failures": [],
+      "n_answerable": 40,
+      "n_unanswerable": 5,
+      "execution_correct": 28,
+      "execution_accuracy": 0.7,
+      "execution_accuracy_wilson_95_ci": [
+        0.5457,
+        0.8193
+      ],
+      "valid_sql_count": 40,
+      "valid_sql_rate": 1.0,
+      "valid_sql_wilson_95_ci": [
+        0.9124,
+        1.0
+      ],
+      "refusal_correct": 5,
+      "refusal_accuracy": 1.0,
+      "refusal_wilson_95_ci": [
+        0.5655,
+        1.0
+      ],
+      "mean_attempts": 1,
+      "latency_p50_ms": 1199.52,
+      "latency_p95_ms": 2518.98,
+      "total_tokens": 149266,
+      "by_difficulty": {
+        "easy": {
+          "correct": 10,
+          "total": 10,
+          "accuracy": 1.0,
+          "wilson_95_ci": [
+            0.7225,
+            1.0
+          ]
+        },
+        "medium": {
+          "correct": 14,
+          "total": 20,
+          "accuracy": 0.7,
+          "wilson_95_ci": [
+            0.481,
+            0.8545
+          ]
+        },
+        "hard": {
+          "correct": 4,
+          "total": 10,
+          "accuracy": 0.4,
+          "wilson_95_ci": [
+            0.1682,
+            0.6873
+          ]
+        }
+      },
+      "failure_counts": {
+        "wrong_join_or_aggregation": 12,
+        "wrong_column_semantics": 0,
+        "hallucinated_table_or_column": 0,
+        "syntax_error": 0,
+        "ambiguity": 0,
+        "guard_blocked": 0,
+        "timeout": 0
+      },
+      "failed_questions": [
+        {
+          "id": "med_04",
+          "difficulty": "medium",
+          "question": "Which 5 store-family series in promo_elasticity_summary have the highest empirical_promo_lift_pct?",
+          "category": "wrong_join_or_aggregation",
+          "generated_sql": "SELECT store_nbr, city, state, store_type, store_cluster, family, empirical_promo_lift_pct FROM promo_elasticity_summary ORDER BY empirical_promo_lift_pct DESC LIMIT 5",
+          "reference_sql": "SELECT store_nbr, family, ROUND(empirical_promo_lift_pct, 2) AS empirical_promo_lift_pct FROM promo_elasticity_summary ORDER BY empirical_promo_lift_pct DESC LIMIT 5",
+          "actual_row_preview": [
+            [
+              10.0,
+              "Quito",
+              "Pichincha",
+              "C",
+              15.0,
+              "SCHOOL AND OFFICE SUPPLIES",
+              3094.1201171875
+            ],
+            [
+              22.0,
+              "Puyo",
+              "Pastaza",
+              "C",
+              7.0,
+              "SCHOOL AND OFFICE SUPPLIES",
+              3605.0
+            ]
+          ],
+          "expected_row_preview": [
+            [
+              36,
+              "SCHOOL AND OFFICE SUPPLIES",
+              7980.77002
+            ],
+            [
+              54,
+              "SCHOOL AND OFFICE SUPPLIES",
+              6721.430176
+            ]
+          ],
+          "error": null
+        },
+        {
+          "id": "med_05",
+          "difficulty": "medium",
+          "question": "For each product family in promo_elasticity_summary with at least 20 evaluated series, what is the average empirical_promo_lift_pct, ordered highest first (top 5)?",
+          "category": "wrong_join_or_aggregation",
+          "generated_sql": "SELECT family, AVG(empirical_promo_lift_pct) AS avg_empirical_promo_lift_pct FROM promo_elasticity_summary GROUP BY family HAVING COUNT(*) >= 20 ORDER BY avg_empirical_promo_lift_pct DESC LIMIT 5",
+          "reference_sql": "SELECT family, COUNT(*) AS n_series, ROUND(AVG(empirical_promo_lift_pct), 2) AS avg_lift_pct FROM promo_elasticity_summary GROUP BY family HAVING COUNT(*) >= 20 ORDER BY avg_lift_pct DESC LIMIT 5",
+          "actual_row_preview": [
+            [
+              "BEAUTY",
+              113.2394437260098
+            ],
+            [
+              "LAWN AND GARDEN",
+              98.24666634584085
+            ]
+          ],
+          "expected_row_preview": [
+            [
+              "SCHOOL AND OFFICE SUPPLIES",
+              45,
+              1958.48
+            ],
+            [
+              "PET SUPPLIES",
+              43,
+              119.28
+            ]
+          ],
+          "error": null
+        },
+        {
+          "id": "med_07",
+          "difficulty": "medium",
+          "question": "Which 5 HIGH_VELOCITY_ELEVATED_ZERO_SALES_DAYS_PROXY series in zero_sales_day_proxy_summary have the highest zero_sales_rate_pct?",
+          "category": "wrong_join_or_aggregation",
+          "generated_sql": "SELECT store_nbr, city, state, family, zero_sales_rate_pct FROM zero_sales_day_proxy_summary WHERE zero_sales_proxy_tier = 'HIGH_VELOCITY_ELEVATED_ZERO_SALES_DAYS_PROXY' ORDER BY zero_sales_rate_pct DESC LIMIT 5",
+          "reference_sql": "SELECT store_nbr, city, family, ROUND(zero_sales_rate_pct, 2) AS zero_sales_rate_pct, ROUND(mean_daily_sales, 2) AS mean_daily_sales FROM zero_sales_day_proxy_summary WHERE zero_sales_proxy_tier = 'HIGH_VELOCITY_ELEVATED_ZERO_SALES_DAYS_PROXY' ORDER BY zero_sales_rate_pct DESC, mean_daily_sales DESC LIMIT 5",
+          "actual_row_preview": [
+            [
+              14.0,
+              "Riobamba",
+              "Chimborazo",
+              "PRODUCE",
+              23.729999542236328
+            ],
+            [
+              18.0,
+              "Quito",
+              "Pichincha",
+              "HOME CARE",
+              29.190000534057617
+            ]
+          ],
+          "expected_row_preview": [
+            [
+              18,
+              "Quito",
+              "PRODUCE",
+              31.309999,
+              1117.77002
+            ],
+            [
+              18,
+              "Quito",
+              "HOME CARE",
+              29.190001,
+              139.020004
+            ]
+          ],
+          "error": null
+        },
+        {
+          "id": "med_08",
+          "difficulty": "medium",
+          "question": "In perishable_volatility_summary, what is the average cv_demand and series count for each volatility_proxy_tier?",
+          "category": "wrong_join_or_aggregation",
+          "generated_sql": "SELECT volatility_proxy_tier, AVG(cv_demand) AS avg_cv_demand, COUNT(*) AS series_count FROM perishable_volatility_summary GROUP BY volatility_proxy_tier LIMIT 100",
+          "reference_sql": "SELECT volatility_proxy_tier, COUNT(*) AS series_count, ROUND(AVG(cv_demand), 4) AS avg_cv_demand FROM perishable_volatility_summary GROUP BY volatility_proxy_tier ORDER BY avg_cv_demand DESC",
+          "actual_row_preview": [
+            [
+              "HIGH_VOLATILITY_PERISHABLE_PROXY",
+              1.1003721356391907,
+              61.0
+            ],
+            [
+              "MODERATE_VOLATILITY_PERISHABLE_PROXY",
+              0.4023688342674638,
+              369.0
+            ]
+          ],
+          "expected_row_preview": [
+            [
+              "HIGH_VOLATILITY_PERISHABLE_PROXY",
+              61,
+              1.1004
+            ],
+            [
+              "NON_PERISHABLE_OR_LOW_VOLATILITY",
+              1095,
+              0.9434
+            ]
+          ],
+          "error": null
+        },
+        {
+          "id": "med_09",
+          "difficulty": "medium",
+          "question": "Among PERISHABLE families in perishable_volatility_summary, what is the average cv_demand per family, ordered highest first?",
+          "category": "wrong_join_or_aggregation",
+          "generated_sql": "SELECT family, AVG(cv_demand) AS avg_cv_demand FROM perishable_volatility_summary WHERE perishability_class = 'PERISHABLE' GROUP BY family ORDER BY avg_cv_demand DESC LIMIT 100",
+          "reference_sql": "SELECT family, COUNT(*) AS n_stores, ROUND(AVG(cv_demand), 4) AS avg_cv_demand FROM perishable_volatility_summary WHERE perishability_class = 'PERISHABLE' GROUP BY family ORDER BY avg_cv_demand DESC",
+          "actual_row_preview": [
+            [
+              "BREAD/BAKERY",
+              0.3352629633413421
+            ],
+            [
+              "DAIRY",
+              0.40651666510988166
+            ]
+          ],
+          "expected_row_preview": [
+            [
+              "PRODUCE",
+              54,
+              0.7192
+            ],
+            [
+              "SEAFOOD",
+              52,
+              0.6944
+            ]
+          ],
+          "error": null
+        },
+        {
+          "id": "med_12",
+          "difficulty": "medium",
+          "question": "In sim_policy_summary, which rows achieve a fill_rate_pct of at least 99.0 at lead_time_days = 7, ordered by average_inventory_units ascending?",
+          "category": "wrong_join_or_aggregation",
+          "generated_sql": "SELECT * FROM sim_policy_summary WHERE lead_time_days = 7 AND fill_rate_pct >= 99.0 ORDER BY average_inventory_units ASC LIMIT 100",
+          "reference_sql": "SELECT policy, service_level, z_value, fill_rate_pct, average_inventory_units FROM sim_policy_summary WHERE lead_time_days = 7 AND fill_rate_pct >= 99.0 ORDER BY average_inventory_units ASC",
+          "actual_row_preview": [
+            [
+              "lightgbm_p50_safety_stock",
+              "LightGBM P50 + SS (90%)",
+              "reforecast",
+              7.0,
+              false,
+              0.9,
+              1.2815515655446004,
+              99.07,
+              2.92,
+              4041625.9,
+              76.9,
+              "Idealized metric under continuous fractional ordering without case packs, MOQs, or warehouse dispatch constraints.",
+              69824923.0,
+              70483472.12,
+              96.0,
+              82.0,
+              14.0,
+              1782.0
+            ],
+            [
+              "lightgbm_p50_safety_stock",
+              "LightGBM P50 + SS (95%)",
+              "reforecast",
+              7.0,
+              false,
+              0.95,
+              1.6448536269514722,
+              99.27,
+              2.12,
+              4279761.61,
+              72.77,
+              "Idealized metric under continuous fractional ordering without case packs, MOQs, or warehouse dispatch constraints.",
+              69965859.75,
+              70483472.12,
+              96.0,
+              82.0,
+              14.0,
+              1782.0
+            ]
+          ],
+          "expected_row_preview": [
+            [
+              "lightgbm_p50_safety_stock",
+              0.9,
+              1.281552,
+              99.07,
+              4041625.9
+            ],
+            [
+              "lightgbm_point_safety_stock",
+              0.9,
+              1.281552,
+              99.25,
+              4119750.09
+            ]
+          ],
+          "error": null
+        },
+        {
+          "id": "hard_01",
+          "difficulty": "hard",
+          "question": "Without double counting across product families, which 5 stores had the highest total weekly_transactions across all weeks in weekly_store_family_summary?",
+          "category": "wrong_join_or_aggregation",
+          "generated_sql": "WITH weekly_tx AS (SELECT store_nbr, week_start_date, MAX(weekly_transactions) AS week_tx FROM weekly_store_family_summary GROUP BY store_nbr, week_start_date) SELECT store_nbr, SUM(week_tx) AS total_weekly_transactions FROM weekly_tx GROUP BY store_nbr ORDER BY total_weekly_transactions DESC LIMIT 5",
+          "reference_sql": "WITH store_weeks AS (  SELECT store_nbr, city, week_start_date, MAX(weekly_transactions) AS wk_tx   FROM weekly_store_family_summary   GROUP BY store_nbr, city, week_start_date) SELECT store_nbr, city, SUM(wk_tx) AS total_transactions FROM store_weeks GROUP BY store_nbr, city ORDER BY total_transactions DESC LIMIT 5",
+          "actual_row_preview": [
+            [
+              3.0,
+              5366350.0
+            ],
+            [
+              44.0,
+              7273093.0
+            ]
+          ],
+          "expected_row_preview": [
+            [
+              44,
+              "Quito",
+              7273093
+            ],
+            [
+              47,
+              "Quito",
+              6535810
+            ]
+          ],
+          "error": null
+        },
+        {
+          "id": "hard_02",
+          "difficulty": "hard",
+          "question": "For each store_type in weekly_store_family_summary, which single store has the highest total unit sales (rank 1 per store_type)?",
+          "category": "wrong_join_or_aggregation",
+          "generated_sql": "WITH store_sales AS (SELECT store_type, store_nbr, SUM(total_sales) AS total_sales FROM weekly_store_family_summary GROUP BY store_type, store_nbr) SELECT store_type, store_nbr, total_sales FROM (SELECT *, ROW_NUMBER() OVER (PARTITION BY store_type ORDER BY total_sales DESC) AS rn FROM store_sales) AS t WHERE rn = 1 ORDER BY store_type LIMIT 100",
+          "reference_sql": "WITH store_totals AS (  SELECT store_type, store_nbr, city, ROUND(SUM(total_sales), 2) AS store_sales,   ROW_NUMBER() OVER (PARTITION BY store_type ORDER BY SUM(total_sales) DESC) AS rk   FROM weekly_store_family_summary   GROUP BY store_type, store_nbr, city) SELECT store_type, store_nbr, city, store_sales FROM store_totals WHERE rk = 1 ORDER BY store_type ASC",
+          "actual_row_preview": [
+            [
+              "A",
+              44.0,
+              62087553.92466736
+            ],
+            [
+              "B",
+              11.0,
+              28325558.747299194
+            ]
+          ],
+          "expected_row_preview": [
+            [
+              "A",
+              44,
+              "Quito",
+              62087553.92
+            ],
+            [
+              "B",
+              11,
+              "Cayambe",
+              28325558.75
+            ]
+          ],
+          "error": null
+        },
+        {
+          "id": "hard_03",
+          "difficulty": "hard",
+          "question": "Join promo_elasticity_summary and perishable_volatility_summary on store_nbr and family: for PERISHABLE series, what is the average empirical_promo_lift_pct and average cv_demand for each volatility_proxy_tier?",
+          "category": "wrong_join_or_aggregation",
+          "generated_sql": "SELECT pvs.volatility_proxy_tier, AVG(pes.empirical_promo_lift_pct) AS avg_empirical_promo_lift_pct, AVG(pvs.cv_demand) AS avg_cv_demand FROM perishable_volatility_summary AS pvs JOIN promo_elasticity_summary AS pes ON pvs.store_nbr = pes.store_nbr AND pvs.family = pes.family WHERE pvs.perishability_class = 'PERISHABLE' GROUP BY pvs.volatility_proxy_tier ORDER BY pvs.volatility_proxy_tier LIMIT 100",
+          "reference_sql": "SELECT v.volatility_proxy_tier, COUNT(*) AS paired_series, ROUND(AVG(p.empirical_promo_lift_pct), 2) AS avg_promo_lift_pct, ROUND(AVG(v.cv_demand), 4) AS avg_cv_demand FROM promo_elasticity_summary p JOIN perishable_volatility_summary v   ON p.store_nbr = v.store_nbr AND p.family = v.family WHERE v.perishability_class = 'PERISHABLE' GROUP BY v.volatility_proxy_tier ORDER BY avg_cv_demand DESC",
+          "actual_row_preview": [
+            [
+              "HIGH_VOLATILITY_PERISHABLE_PROXY",
+              73.44950826050805,
+              1.1003721356391907
+            ],
+            [
+              "MODERATE_VOLATILITY_PERISHABLE_PROXY",
+              20.66535518758121,
+              0.4035699448950304
+            ]
+          ],
+          "expected_row_preview": [
+            [
+              "HIGH_VOLATILITY_PERISHABLE_PROXY",
+              61,
+              73.45,
+              1.1004
+            ],
+            [
+              "MODERATE_VOLATILITY_PERISHABLE_PROXY",
+              366,
+              20.67,
+              0.4036
+            ]
+          ],
+          "error": null
+        },
+        {
+          "id": "hard_04",
+          "difficulty": "hard",
+          "question": "Join zero_sales_day_proxy_summary and perishable_volatility_summary on store_nbr and family: which 5 HIGH_VOLATILITY_PERISHABLE_PROXY series have the highest zero_sales_rate_pct?",
+          "category": "wrong_join_or_aggregation",
+          "generated_sql": "SELECT z.store_nbr, z.city, z.family, z.zero_sales_rate_pct FROM zero_sales_day_proxy_summary AS z JOIN perishable_volatility_summary AS p USING (store_nbr, family) WHERE p.volatility_proxy_tier = 'HIGH_VOLATILITY_PERISHABLE_PROXY' ORDER BY z.zero_sales_rate_pct DESC LIMIT 5",
+          "reference_sql": "SELECT z.store_nbr, z.city, z.family, ROUND(z.zero_sales_rate_pct, 2) AS zero_sales_rate_pct, ROUND(v.cv_demand, 4) AS cv_demand FROM zero_sales_day_proxy_summary z JOIN perishable_volatility_summary v   ON z.store_nbr = v.store_nbr AND z.family = v.family WHERE v.volatility_proxy_tier = 'HIGH_VOLATILITY_PERISHABLE_PROXY' ORDER BY z.zero_sales_rate_pct DESC, v.cv_demand DESC LIMIT 5",
+          "actual_row_preview": [
+            [
+              13.0,
+              "Latacunga",
+              "SEAFOOD",
+              37.08000183105469
+            ],
+            [
+              32.0,
+              "Guayaquil",
+              "SEAFOOD",
+              48.130001068115234
+            ]
+          ],
+          "expected_row_preview": [
+            [
+              36,
+              "Libertad",
+              "SEAFOOD",
+              53.529999,
+              1.5248
+            ],
+            [
+              32,
+              "Guayaquil",
+              "SEAFOOD",
+              48.130001,
+              1.4161
+            ]
+          ],
+          "error": null
+        },
+        {
+          "id": "hard_07",
+          "difficulty": "hard",
+          "question": "Using a window function or CTE over weekly_store_family_summary, what was the year-over-year percentage change in total chain-wide unit sales from 2014 to 2015 and from 2015 to 2016?",
+          "category": "wrong_join_or_aggregation",
+          "generated_sql": "WITH yearly_sales AS (SELECT CAST(EXTRACT(YEAR FROM week_start_date) AS INT) AS year, SUM(total_sales) AS total_sales FROM weekly_store_family_summary WHERE EXTRACT(YEAR FROM week_start_date) IN (2014, 2015, 2016) GROUP BY year) SELECT year, total_sales, LAG(total_sales) OVER (ORDER BY year) AS prev_year_sales, CASE WHEN LAG(total_sales) OVER (ORDER BY year) IS NULL THEN NULL ELSE 100.0 * (total_sales - LAG(total_sales) OVER (ORDER BY year)) / LAG(total_sales) OVER (ORDER BY year) END AS yoy_pct_change FROM yearly_sales WHERE year IN (2015, 6) /* typo intentional? Actually need 2015 and 2016 */ ORDER BY year LIMIT 100",
+          "reference_sql": "WITH yearly AS (  SELECT EXTRACT(YEAR FROM week_start_date) AS yr, SUM(total_sales) AS sales   FROM weekly_store_family_summary   WHERE EXTRACT(YEAR FROM week_start_date) IN (2014, 2015, 2016)   GROUP BY yr), lagged AS (  SELECT yr, sales, LAG(sales) OVER (ORDER BY yr) AS prev_sales   FROM yearly) SELECT yr, ROUND(100.0 * (sales - prev_sales) / prev_sales, 2) AS yoy_growth_pct FROM lagged WHERE prev_sales IS NOT NULL ORDER BY yr ASC",
+          "actual_row_preview": [
+            [
+              2015.0,
+              241139609.98397636,
+              null,
+              null
+            ]
+          ],
+          "expected_row_preview": [
+            [
+              2015,
+              15.85
+            ],
+            [
+              2016,
+              18.75
+            ]
+          ],
+          "error": null
+        },
+        {
+          "id": "hard_08",
+          "difficulty": "hard",
+          "question": "Compare chain-wide weekly unit sales in weeks with oil price below 50 vs weeks with oil price of 50 or above: what is the number of weeks and average weekly chain sales in each regime?",
+          "category": "wrong_join_or_aggregation",
+          "generated_sql": "WITH weekly_chain AS (SELECT week_start_date, MAX(avg_oil_price) AS avg_oil_price, SUM(total_sales) AS week_sales FROM weekly_store_family_summary GROUP BY week_start_date) SELECT CASE WHEN avg_oil_price < 50 THEN 'below_50' ELSE '50_or_above' END AS oil_price_regime, COUNT(*) AS num_weeks, AVG(week_sales) AS avg_weekly_chain_sales FROM weekly_chain GROUP BY oil_price_regime LIMIT 100",
+          "reference_sql": "WITH weekly_chain AS (  SELECT week_start_date, AVG(avg_oil_price) AS oil_price,   SUM(total_sales) AS chain_weekly_sales   FROM weekly_store_family_summary   WHERE avg_oil_price IS NOT NULL   GROUP BY week_start_date) SELECT CASE WHEN oil_price < 50 THEN 'UNDER_50' ELSE 'AT_OR_ABOVE_50' END AS oil_regime, COUNT(*) AS n_weeks, ROUND(AVG(chain_weekly_sales), 2) AS avg_weekly_sales FROM weekly_chain GROUP BY oil_regime ORDER BY oil_regime ASC",
+          "actual_row_preview": [
+            [
+              "50_or_above",
+              145.0,
+              3837920.35060109
+            ],
+            [
+              "below_50",
+              97.0,
+              5331407.41627237
+            ]
+          ],
+          "expected_row_preview": [
+            [
+              "AT_OR_ABOVE_50",
+              145,
+              3837920.35
+            ],
+            [
+              "UNDER_50",
+              97,
+              5331407.42
+            ]
+          ],
+          "error": null
+        }
+      ]
     }
   },
   "heldout_evaluation": {
@@ -1715,6 +3127,9 @@
         "description": "Schema with table/column descriptions + bounded self-repair (up to 2 repairs)",
         "max_repairs": 2,
         "include_descriptions": true,
+        "include_grain_notes": false,
+        "grain_aware_prompt": false,
+        "check_grain_sanity": false,
         "n_total": 10,
         "n_completed": 10,
         "n_unresolved": 0,
@@ -1790,6 +3205,9 @@
         "description": "Schema with table/column descriptions + repair loop disabled (0 repairs)",
         "max_repairs": 0,
         "include_descriptions": true,
+        "include_grain_notes": false,
+        "grain_aware_prompt": false,
+        "check_grain_sanity": false,
         "n_total": 10,
         "n_completed": 10,
         "n_unresolved": 0,
@@ -1865,6 +3283,9 @@
         "description": "Bare schema (table/column names and types only, no descriptions) + repair on",
         "max_repairs": 2,
         "include_descriptions": false,
+        "include_grain_notes": false,
+        "grain_aware_prompt": false,
+        "check_grain_sanity": false,
         "n_total": 10,
         "n_completed": 10,
         "n_unresolved": 0,
@@ -2020,6 +3441,322 @@
             "error": null
           }
         ]
+      },
+      "catalog_grain_notes_repair_on": {
+        "config": "catalog_grain_notes_repair_on",
+        "description": "Full schema + explicit table grain/fan-out notes in catalog.py + repair on",
+        "max_repairs": 2,
+        "include_descriptions": true,
+        "include_grain_notes": true,
+        "grain_aware_prompt": false,
+        "check_grain_sanity": false,
+        "n_total": 10,
+        "n_completed": 10,
+        "n_unresolved": 0,
+        "unresolved_questions": [],
+        "infrastructure_failures_count": 0,
+        "infrastructure_failures": [],
+        "n_answerable": 10,
+        "n_unanswerable": 0,
+        "execution_correct": 10,
+        "execution_accuracy": 1.0,
+        "execution_accuracy_wilson_95_ci": [
+          0.7225,
+          1.0
+        ],
+        "valid_sql_count": 10,
+        "valid_sql_rate": 1.0,
+        "valid_sql_wilson_95_ci": [
+          0.7225,
+          1.0
+        ],
+        "refusal_correct": 0,
+        "refusal_accuracy": 0.0,
+        "refusal_wilson_95_ci": [
+          0.0,
+          0.0
+        ],
+        "mean_attempts": 1,
+        "latency_p50_ms": 2095.45,
+        "latency_p95_ms": 4863.77,
+        "total_tokens": 40594,
+        "by_difficulty": {
+          "easy": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": 0.0,
+            "wilson_95_ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "medium": {
+            "correct": 4,
+            "total": 4,
+            "accuracy": 1.0,
+            "wilson_95_ci": [
+              0.5101,
+              1.0
+            ]
+          },
+          "hard": {
+            "correct": 6,
+            "total": 6,
+            "accuracy": 1.0,
+            "wilson_95_ci": [
+              0.6097,
+              1.0
+            ]
+          }
+        },
+        "failure_counts": {
+          "wrong_join_or_aggregation": 0,
+          "wrong_column_semantics": 0,
+          "hallucinated_table_or_column": 0,
+          "syntax_error": 0,
+          "ambiguity": 0,
+          "guard_blocked": 0,
+          "timeout": 0
+        },
+        "failed_questions": []
+      },
+      "grain_aware_prompt_repair_on": {
+        "config": "grain_aware_prompt_repair_on",
+        "description": "Full schema + catalog grain notes + grain-aware prompt checklist + repair on",
+        "max_repairs": 2,
+        "include_descriptions": true,
+        "include_grain_notes": true,
+        "grain_aware_prompt": true,
+        "check_grain_sanity": false,
+        "n_total": 10,
+        "n_completed": 0,
+        "n_unresolved": 10,
+        "unresolved_questions": [
+          "holdout_med_01",
+          "holdout_med_02",
+          "holdout_med_03",
+          "holdout_med_04",
+          "holdout_hard_01",
+          "holdout_hard_02",
+          "holdout_hard_03",
+          "holdout_hard_04",
+          "holdout_hard_05",
+          "holdout_hard_06"
+        ],
+        "infrastructure_failures_count": 10,
+        "infrastructure_failures": [
+          {
+            "id": "holdout_med_01",
+            "difficulty": "medium",
+            "question": "In weekly_store_family_summary, what are the total unit sales (total_sales) and total promoted item-days (total_promo_count) for each store_cluster, ordered by total unit sales descending (top 5 clusters)?",
+            "attempts": 1,
+            "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=c7991667087b... in openai_compatible_openai_gpt-oss-120b.jsonl."
+          },
+          {
+            "id": "holdout_med_02",
+            "difficulty": "medium",
+            "question": "In promo_elasticity_summary, what is the number of evaluated series and average promo_day_share_pct for each store_type, ordered by store_type ascending?",
+            "attempts": 1,
+            "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=c1728fd47a8d... in openai_compatible_openai_gpt-oss-120b.jsonl."
+          },
+          {
+            "id": "holdout_med_03",
+            "difficulty": "medium",
+            "question": "In perishable_volatility_summary, which 5 cities have the highest average volatility_exposure_index across PERISHABLE series (return city, perishable_series, and avg_volatility_exposure_index)?",
+            "attempts": 1,
+            "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=60dac3f7cdc3... in openai_compatible_openai_gpt-oss-120b.jsonl."
+          },
+          {
+            "id": "holdout_med_04",
+            "difficulty": "medium",
+            "question": "In zero_sales_day_proxy_summary, for each state with at least 100 store-family series, what is the number of series and average zero_sales_days, ordered by average zero_sales_days descending?",
+            "attempts": 1,
+            "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=8018aeebe032... in openai_compatible_openai_gpt-oss-120b.jsonl."
+          },
+          {
+            "id": "holdout_hard_01",
+            "difficulty": "hard",
+            "question": "In weekly_store_family_summary, what is the total store weekly_transactions across all stores for each calendar year from 2013 through 2017, ordered by year ascending?",
+            "attempts": 1,
+            "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=7ad765a6db62... in openai_compatible_openai_gpt-oss-120b.jsonl."
+          },
+          {
+            "id": "holdout_hard_02",
+            "difficulty": "hard",
+            "question": "In weekly_store_family_summary, what is the total store weekly_transactions for each store_type across the entire dataset, ordered by store_type ascending?",
+            "attempts": 1,
+            "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=e5fda9394edb... in openai_compatible_openai_gpt-oss-120b.jsonl."
+          },
+          {
+            "id": "holdout_hard_03",
+            "difficulty": "hard",
+            "question": "In weekly_store_family_summary, which 5 cities recorded the highest total store weekly_transactions in calendar year 2016 (return city and total_transactions)?",
+            "attempts": 1,
+            "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=8cd495d81720... in openai_compatible_openai_gpt-oss-120b.jsonl."
+          },
+          {
+            "id": "holdout_hard_04",
+            "difficulty": "hard",
+            "question": "In weekly_store_family_summary, what is the total number of distinct-week non_transferred_holidays in each calendar year from 2013 through 2017, ordered by year ascending?",
+            "attempts": 1,
+            "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=2c06437ac651... in openai_compatible_openai_gpt-oss-120b.jsonl."
+          },
+          {
+            "id": "holdout_hard_05",
+            "difficulty": "hard",
+            "question": "For the HIGH_VOLATILITY_PERISHABLE_PROXY series in perishable_volatility_summary, what is the count of paired series, their combined 2016 unit sales (total_sales from weekly_store_family_summary), and their combined series-level total_sales from zero_sales_day_proxy_summary?",
+            "attempts": 1,
+            "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=361ddab4e90d... in openai_compatible_openai_gpt-oss-120b.jsonl."
+          },
+          {
+            "id": "holdout_hard_06",
+            "difficulty": "hard",
+            "question": "In sim_policy_summary, among non-extrapolated rows (is_sensitivity_extrapolation = FALSE) at lead_time_days = 7, what is the gain in fill_rate_pct and reduction in stockout_day_share_pct when moving from service_level = 0.90 to service_level = 0.98 for each safety-stock policy, ordered by policy ascending?",
+            "attempts": 1,
+            "error": "Replay cache miss for provider='openai_compatible', model='openai/gpt-oss-120b', prompt_hash=cec1e8bddd01... in openai_compatible_openai_gpt-oss-120b.jsonl."
+          }
+        ],
+        "n_answerable": 0,
+        "n_unanswerable": 0,
+        "execution_correct": 0,
+        "execution_accuracy": 0.0,
+        "execution_accuracy_wilson_95_ci": [
+          0.0,
+          0.0
+        ],
+        "valid_sql_count": 0,
+        "valid_sql_rate": 0.0,
+        "valid_sql_wilson_95_ci": [
+          0.0,
+          0.0
+        ],
+        "refusal_correct": 0,
+        "refusal_accuracy": 0.0,
+        "refusal_wilson_95_ci": [
+          0.0,
+          0.0
+        ],
+        "mean_attempts": 0.0,
+        "latency_p50_ms": 0.0,
+        "latency_p95_ms": 0.0,
+        "total_tokens": null,
+        "by_difficulty": {
+          "easy": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": 0.0,
+            "wilson_95_ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "medium": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": 0.0,
+            "wilson_95_ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "hard": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": 0.0,
+            "wilson_95_ci": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "failure_counts": {
+          "wrong_join_or_aggregation": 0,
+          "wrong_column_semantics": 0,
+          "hallucinated_table_or_column": 0,
+          "syntax_error": 0,
+          "ambiguity": 0,
+          "guard_blocked": 0,
+          "timeout": 0
+        },
+        "failed_questions": []
+      },
+      "grain_sanity_check_repair_on": {
+        "config": "grain_sanity_check_repair_on",
+        "description": "Full schema + SUM-over-repeated-grain AST sanity check repair trigger",
+        "max_repairs": 2,
+        "include_descriptions": true,
+        "include_grain_notes": false,
+        "grain_aware_prompt": false,
+        "check_grain_sanity": true,
+        "n_total": 10,
+        "n_completed": 10,
+        "n_unresolved": 0,
+        "unresolved_questions": [],
+        "infrastructure_failures_count": 0,
+        "infrastructure_failures": [],
+        "n_answerable": 10,
+        "n_unanswerable": 0,
+        "execution_correct": 10,
+        "execution_accuracy": 1.0,
+        "execution_accuracy_wilson_95_ci": [
+          0.7225,
+          1.0
+        ],
+        "valid_sql_count": 10,
+        "valid_sql_rate": 1.0,
+        "valid_sql_wilson_95_ci": [
+          0.7225,
+          1.0
+        ],
+        "refusal_correct": 0,
+        "refusal_accuracy": 0.0,
+        "refusal_wilson_95_ci": [
+          0.0,
+          0.0
+        ],
+        "mean_attempts": 1,
+        "latency_p50_ms": 1717.85,
+        "latency_p95_ms": 2771.82,
+        "total_tokens": 35824,
+        "by_difficulty": {
+          "easy": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": 0.0,
+            "wilson_95_ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "medium": {
+            "correct": 4,
+            "total": 4,
+            "accuracy": 1.0,
+            "wilson_95_ci": [
+              0.5101,
+              1.0
+            ]
+          },
+          "hard": {
+            "correct": 6,
+            "total": 6,
+            "accuracy": 1.0,
+            "wilson_95_ci": [
+              0.6097,
+              1.0
+            ]
+          }
+        },
+        "failure_counts": {
+          "wrong_join_or_aggregation": 0,
+          "wrong_column_semantics": 0,
+          "hallucinated_table_or_column": 0,
+          "syntax_error": 0,
+          "ambiguity": 0,
+          "guard_blocked": 0,
+          "timeout": 0
+        },
+        "failed_questions": []
       }
     }
   },
@@ -2069,6 +3806,9 @@
           "description": "Schema with table/column descriptions + bounded self-repair (up to 2 repairs)",
           "max_repairs": 2,
           "include_descriptions": true,
+          "include_grain_notes": false,
+          "grain_aware_prompt": false,
+          "check_grain_sanity": false,
           "n_total": 45,
           "n_completed": 45,
           "n_unresolved": 0,
@@ -2515,6 +4255,9 @@
           "description": "Schema with table/column descriptions + repair loop disabled (0 repairs)",
           "max_repairs": 0,
           "include_descriptions": true,
+          "include_grain_notes": false,
+          "grain_aware_prompt": false,
+          "check_grain_sanity": false,
           "n_total": 45,
           "n_completed": 45,
           "n_unresolved": 0,
@@ -2961,6 +4704,9 @@
           "description": "Bare schema (table/column names and types only, no descriptions) + repair on",
           "max_repairs": 2,
           "include_descriptions": false,
+          "include_grain_notes": false,
+          "grain_aware_prompt": false,
+          "check_grain_sanity": false,
           "n_total": 45,
           "n_completed": 42,
           "n_unresolved": 3,
@@ -3460,6 +5206,455 @@
               "error": null
             }
           ]
+        },
+        "grain_sanity_check_repair_on": {
+          "config": "grain_sanity_check_repair_on",
+          "description": "Full schema + SUM-over-repeated-grain AST sanity check repair trigger",
+          "max_repairs": 2,
+          "include_descriptions": true,
+          "include_grain_notes": false,
+          "grain_aware_prompt": false,
+          "check_grain_sanity": true,
+          "n_total": 45,
+          "n_completed": 45,
+          "n_unresolved": 0,
+          "unresolved_questions": [],
+          "infrastructure_failures_count": 0,
+          "infrastructure_failures": [],
+          "n_answerable": 40,
+          "n_unanswerable": 5,
+          "execution_correct": 30,
+          "execution_accuracy": 0.75,
+          "execution_accuracy_wilson_95_ci": [
+            0.5981,
+            0.8581
+          ],
+          "valid_sql_count": 40,
+          "valid_sql_rate": 1.0,
+          "valid_sql_wilson_95_ci": [
+            0.9124,
+            1.0
+          ],
+          "refusal_correct": 5,
+          "refusal_accuracy": 1.0,
+          "refusal_wilson_95_ci": [
+            0.5655,
+            1.0
+          ],
+          "mean_attempts": 1,
+          "latency_p50_ms": 1482.02,
+          "latency_p95_ms": 2440.3,
+          "total_tokens": 154052,
+          "by_difficulty": {
+            "easy": {
+              "correct": 10,
+              "total": 10,
+              "accuracy": 1.0,
+              "wilson_95_ci": [
+                0.7225,
+                1.0
+              ]
+            },
+            "medium": {
+              "correct": 15,
+              "total": 20,
+              "accuracy": 0.75,
+              "wilson_95_ci": [
+                0.5313,
+                0.8881
+              ]
+            },
+            "hard": {
+              "correct": 5,
+              "total": 10,
+              "accuracy": 0.5,
+              "wilson_95_ci": [
+                0.2366,
+                0.7634
+              ]
+            }
+          },
+          "failure_counts": {
+            "wrong_join_or_aggregation": 10,
+            "wrong_column_semantics": 0,
+            "hallucinated_table_or_column": 0,
+            "syntax_error": 0,
+            "ambiguity": 0,
+            "guard_blocked": 0,
+            "timeout": 0
+          },
+          "failed_questions": [
+            {
+              "id": "med_05",
+              "difficulty": "medium",
+              "question": "For each product family in promo_elasticity_summary with at least 20 evaluated series, what is the average empirical_promo_lift_pct, ordered highest first (top 5)?",
+              "category": "wrong_join_or_aggregation",
+              "generated_sql": "SELECT family, AVG(empirical_promo_lift_pct) AS avg_lift_pct FROM promo_elasticity_summary GROUP BY family HAVING COUNT(*) >= 20 ORDER BY avg_lift_pct DESC LIMIT 5",
+              "reference_sql": "SELECT family, COUNT(*) AS n_series, ROUND(AVG(empirical_promo_lift_pct), 2) AS avg_lift_pct FROM promo_elasticity_summary GROUP BY family HAVING COUNT(*) >= 20 ORDER BY avg_lift_pct DESC LIMIT 5",
+              "actual_row_preview": [
+                [
+                  "BEAUTY",
+                  113.2394437260098
+                ],
+                [
+                  "LAWN AND GARDEN",
+                  98.24666634584085
+                ]
+              ],
+              "expected_row_preview": [
+                [
+                  "SCHOOL AND OFFICE SUPPLIES",
+                  45,
+                  1958.48
+                ],
+                [
+                  "PET SUPPLIES",
+                  43,
+                  119.28
+                ]
+              ],
+              "error": null
+            },
+            {
+              "id": "med_07",
+              "difficulty": "medium",
+              "question": "Which 5 HIGH_VELOCITY_ELEVATED_ZERO_SALES_DAYS_PROXY series in zero_sales_day_proxy_summary have the highest zero_sales_rate_pct?",
+              "category": "wrong_join_or_aggregation",
+              "generated_sql": "SELECT store_nbr, family, zero_sales_rate_pct FROM zero_sales_day_proxy_summary WHERE zero_sales_proxy_tier = 'HIGH_VELOCITY_ELEVATED_ZERO_SALES_DAYS_PROXY' ORDER BY zero_sales_rate_pct DESC LIMIT 5",
+              "reference_sql": "SELECT store_nbr, city, family, ROUND(zero_sales_rate_pct, 2) AS zero_sales_rate_pct, ROUND(mean_daily_sales, 2) AS mean_daily_sales FROM zero_sales_day_proxy_summary WHERE zero_sales_proxy_tier = 'HIGH_VELOCITY_ELEVATED_ZERO_SALES_DAYS_PROXY' ORDER BY zero_sales_rate_pct DESC, mean_daily_sales DESC LIMIT 5",
+              "actual_row_preview": [
+                [
+                  14.0,
+                  "PRODUCE",
+                  23.729999542236328
+                ],
+                [
+                  18.0,
+                  "HOME CARE",
+                  29.190000534057617
+                ]
+              ],
+              "expected_row_preview": [
+                [
+                  18,
+                  "Quito",
+                  "PRODUCE",
+                  31.309999,
+                  1117.77002
+                ],
+                [
+                  18,
+                  "Quito",
+                  "HOME CARE",
+                  29.190001,
+                  139.020004
+                ]
+              ],
+              "error": null
+            },
+            {
+              "id": "med_08",
+              "difficulty": "medium",
+              "question": "In perishable_volatility_summary, what is the average cv_demand and series count for each volatility_proxy_tier?",
+              "category": "wrong_join_or_aggregation",
+              "generated_sql": "SELECT volatility_proxy_tier, AVG(cv_demand) AS avg_cv_demand, COUNT(*) AS series_count FROM perishable_volatility_summary GROUP BY volatility_proxy_tier ORDER BY volatility_proxy_tier LIMIT 100",
+              "reference_sql": "SELECT volatility_proxy_tier, COUNT(*) AS series_count, ROUND(AVG(cv_demand), 4) AS avg_cv_demand FROM perishable_volatility_summary GROUP BY volatility_proxy_tier ORDER BY avg_cv_demand DESC",
+              "actual_row_preview": [
+                [
+                  "HIGH_VOLATILITY_PERISHABLE_PROXY",
+                  1.1003721356391907,
+                  61.0
+                ],
+                [
+                  "MODERATE_VOLATILITY_PERISHABLE_PROXY",
+                  0.4023688342674638,
+                  369.0
+                ]
+              ],
+              "expected_row_preview": [
+                [
+                  "HIGH_VOLATILITY_PERISHABLE_PROXY",
+                  61,
+                  1.1004
+                ],
+                [
+                  "NON_PERISHABLE_OR_LOW_VOLATILITY",
+                  1095,
+                  0.9434
+                ]
+              ],
+              "error": null
+            },
+            {
+              "id": "med_09",
+              "difficulty": "medium",
+              "question": "Among PERISHABLE families in perishable_volatility_summary, what is the average cv_demand per family, ordered highest first?",
+              "category": "wrong_join_or_aggregation",
+              "generated_sql": "SELECT family, AVG(cv_demand) AS avg_cv_demand FROM perishable_volatility_summary WHERE perishability_class = 'PERISHABLE' GROUP BY family ORDER BY avg_cv_demand DESC LIMIT 100",
+              "reference_sql": "SELECT family, COUNT(*) AS n_stores, ROUND(AVG(cv_demand), 4) AS avg_cv_demand FROM perishable_volatility_summary WHERE perishability_class = 'PERISHABLE' GROUP BY family ORDER BY avg_cv_demand DESC",
+              "actual_row_preview": [
+                [
+                  "BREAD/BAKERY",
+                  0.3352629633413421
+                ],
+                [
+                  "DAIRY",
+                  0.40651666510988166
+                ]
+              ],
+              "expected_row_preview": [
+                [
+                  "PRODUCE",
+                  54,
+                  0.7192
+                ],
+                [
+                  "SEAFOOD",
+                  52,
+                  0.6944
+                ]
+              ],
+              "error": null
+            },
+            {
+              "id": "med_12",
+              "difficulty": "medium",
+              "question": "In sim_policy_summary, which rows achieve a fill_rate_pct of at least 99.0 at lead_time_days = 7, ordered by average_inventory_units ascending?",
+              "category": "wrong_join_or_aggregation",
+              "generated_sql": "SELECT * FROM sim_policy_summary WHERE lead_time_days = 7 AND fill_rate_pct >= 99.0 ORDER BY average_inventory_units ASC LIMIT 100",
+              "reference_sql": "SELECT policy, service_level, z_value, fill_rate_pct, average_inventory_units FROM sim_policy_summary WHERE lead_time_days = 7 AND fill_rate_pct >= 99.0 ORDER BY average_inventory_units ASC",
+              "actual_row_preview": [
+                [
+                  "lightgbm_p50_safety_stock",
+                  "LightGBM P50 + SS (90%)",
+                  "reforecast",
+                  7.0,
+                  false,
+                  0.9,
+                  1.2815515655446004,
+                  99.07,
+                  2.92,
+                  4041625.9,
+                  76.9,
+                  "Idealized metric under continuous fractional ordering without case packs, MOQs, or warehouse dispatch constraints.",
+                  69824923.0,
+                  70483472.12,
+                  96.0,
+                  82.0,
+                  14.0,
+                  1782.0
+                ],
+                [
+                  "lightgbm_p50_safety_stock",
+                  "LightGBM P50 + SS (95%)",
+                  "reforecast",
+                  7.0,
+                  false,
+                  0.95,
+                  1.6448536269514722,
+                  99.27,
+                  2.12,
+                  4279761.61,
+                  72.77,
+                  "Idealized metric under continuous fractional ordering without case packs, MOQs, or warehouse dispatch constraints.",
+                  69965859.75,
+                  70483472.12,
+                  96.0,
+                  82.0,
+                  14.0,
+                  1782.0
+                ]
+              ],
+              "expected_row_preview": [
+                [
+                  "lightgbm_p50_safety_stock",
+                  0.9,
+                  1.281552,
+                  99.07,
+                  4041625.9
+                ],
+                [
+                  "lightgbm_point_safety_stock",
+                  0.9,
+                  1.281552,
+                  99.25,
+                  4119750.09
+                ]
+              ],
+              "error": null
+            },
+            {
+              "id": "hard_01",
+              "difficulty": "hard",
+              "question": "Without double counting across product families, which 5 stores had the highest total weekly_transactions across all weeks in weekly_store_family_summary?",
+              "category": "wrong_join_or_aggregation",
+              "generated_sql": "WITH weekly_totals AS (SELECT store_nbr, week_start_date, MAX(weekly_transactions) AS weekly_transactions FROM weekly_store_family_summary GROUP BY store_nbr, week_start_date) SELECT store_nbr, SUM(weekly_transactions) AS total_weekly_transactions FROM weekly_totals GROUP BY store_nbr ORDER BY total_weekly_transactions DESC LIMIT 5",
+              "reference_sql": "WITH store_weeks AS (  SELECT store_nbr, city, week_start_date, MAX(weekly_transactions) AS wk_tx   FROM weekly_store_family_summary   GROUP BY store_nbr, city, week_start_date) SELECT store_nbr, city, SUM(wk_tx) AS total_transactions FROM store_weeks GROUP BY store_nbr, city ORDER BY total_transactions DESC LIMIT 5",
+              "actual_row_preview": [
+                [
+                  3.0,
+                  5366350.0
+                ],
+                [
+                  44.0,
+                  7273093.0
+                ]
+              ],
+              "expected_row_preview": [
+                [
+                  44,
+                  "Quito",
+                  7273093
+                ],
+                [
+                  47,
+                  "Quito",
+                  6535810
+                ]
+              ],
+              "error": null
+            },
+            {
+              "id": "hard_02",
+              "difficulty": "hard",
+              "question": "For each store_type in weekly_store_family_summary, which single store has the highest total unit sales (rank 1 per store_type)?",
+              "category": "wrong_join_or_aggregation",
+              "generated_sql": "WITH store_totals AS (SELECT store_type, store_nbr, SUM(total_sales) AS total_sales FROM weekly_store_family_summary GROUP BY store_type, store_nbr) SELECT store_type, store_nbr, total_sales FROM (SELECT store_type, store_nbr, total_sales, ROW_NUMBER() OVER (PARTITION BY store_type ORDER BY total_sales DESC) AS rn FROM store_totals) AS t WHERE rn = 1 LIMIT 100",
+              "reference_sql": "WITH store_totals AS (  SELECT store_type, store_nbr, city, ROUND(SUM(total_sales), 2) AS store_sales,   ROW_NUMBER() OVER (PARTITION BY store_type ORDER BY SUM(total_sales) DESC) AS rk   FROM weekly_store_family_summary   GROUP BY store_type, store_nbr, city) SELECT store_type, store_nbr, city, store_sales FROM store_totals WHERE rk = 1 ORDER BY store_type ASC",
+              "actual_row_preview": [
+                [
+                  "A",
+                  44.0,
+                  62087553.92466736
+                ],
+                [
+                  "B",
+                  11.0,
+                  28325558.747299194
+                ]
+              ],
+              "expected_row_preview": [
+                [
+                  "A",
+                  44,
+                  "Quito",
+                  62087553.92
+                ],
+                [
+                  "B",
+                  11,
+                  "Cayambe",
+                  28325558.75
+                ]
+              ],
+              "error": null
+            },
+            {
+              "id": "hard_03",
+              "difficulty": "hard",
+              "question": "Join promo_elasticity_summary and perishable_volatility_summary on store_nbr and family: for PERISHABLE series, what is the average empirical_promo_lift_pct and average cv_demand for each volatility_proxy_tier?",
+              "category": "wrong_join_or_aggregation",
+              "generated_sql": "SELECT p.volatility_proxy_tier, AVG(pe.empirical_promo_lift_pct) AS avg_empirical_promo_lift_pct, AVG(p.cv_demand) AS avg_cv_demand FROM perishable_volatility_summary AS p JOIN promo_elasticity_summary AS pe ON p.store_nbr = pe.store_nbr AND p.family = pe.family WHERE p.perishability_class = 'PERISHABLE' GROUP BY p.volatility_proxy_tier ORDER BY p.volatility_proxy_tier LIMIT 100",
+              "reference_sql": "SELECT v.volatility_proxy_tier, COUNT(*) AS paired_series, ROUND(AVG(p.empirical_promo_lift_pct), 2) AS avg_promo_lift_pct, ROUND(AVG(v.cv_demand), 4) AS avg_cv_demand FROM promo_elasticity_summary p JOIN perishable_volatility_summary v   ON p.store_nbr = v.store_nbr AND p.family = v.family WHERE v.perishability_class = 'PERISHABLE' GROUP BY v.volatility_proxy_tier ORDER BY avg_cv_demand DESC",
+              "actual_row_preview": [
+                [
+                  "HIGH_VOLATILITY_PERISHABLE_PROXY",
+                  73.44950826050805,
+                  1.1003721356391907
+                ],
+                [
+                  "MODERATE_VOLATILITY_PERISHABLE_PROXY",
+                  20.66535518758121,
+                  0.4035699448950304
+                ]
+              ],
+              "expected_row_preview": [
+                [
+                  "HIGH_VOLATILITY_PERISHABLE_PROXY",
+                  61,
+                  73.45,
+                  1.1004
+                ],
+                [
+                  "MODERATE_VOLATILITY_PERISHABLE_PROXY",
+                  366,
+                  20.67,
+                  0.4036
+                ]
+              ],
+              "error": null
+            },
+            {
+              "id": "hard_04",
+              "difficulty": "hard",
+              "question": "Join zero_sales_day_proxy_summary and perishable_volatility_summary on store_nbr and family: which 5 HIGH_VOLATILITY_PERISHABLE_PROXY series have the highest zero_sales_rate_pct?",
+              "category": "wrong_join_or_aggregation",
+              "generated_sql": "SELECT z.store_nbr, z.family, z.zero_sales_rate_pct FROM zero_sales_day_proxy_summary AS z JOIN perishable_volatility_summary AS p ON z.store_nbr = p.store_nbr AND z.family = p.family WHERE p.volatility_proxy_tier = 'HIGH_VOLATILITY_PERISHABLE_PROXY' ORDER BY z.zero_sales_rate_pct DESC LIMIT 5",
+              "reference_sql": "SELECT z.store_nbr, z.city, z.family, ROUND(z.zero_sales_rate_pct, 2) AS zero_sales_rate_pct, ROUND(v.cv_demand, 4) AS cv_demand FROM zero_sales_day_proxy_summary z JOIN perishable_volatility_summary v   ON z.store_nbr = v.store_nbr AND z.family = v.family WHERE v.volatility_proxy_tier = 'HIGH_VOLATILITY_PERISHABLE_PROXY' ORDER BY z.zero_sales_rate_pct DESC, v.cv_demand DESC LIMIT 5",
+              "actual_row_preview": [
+                [
+                  13.0,
+                  "SEAFOOD",
+                  37.08000183105469
+                ],
+                [
+                  32.0,
+                  "SEAFOOD",
+                  48.130001068115234
+                ]
+              ],
+              "expected_row_preview": [
+                [
+                  36,
+                  "Libertad",
+                  "SEAFOOD",
+                  53.529999,
+                  1.5248
+                ],
+                [
+                  32,
+                  "Guayaquil",
+                  "SEAFOOD",
+                  48.130001,
+                  1.4161
+                ]
+              ],
+              "error": null
+            },
+            {
+              "id": "hard_08",
+              "difficulty": "hard",
+              "question": "Compare chain-wide weekly unit sales in weeks with oil price below 50 vs weeks with oil price of 50 or above: what is the number of weeks and average weekly chain sales in each regime?",
+              "category": "wrong_join_or_aggregation",
+              "generated_sql": "WITH weekly_totals AS (SELECT week_start_date, SUM(total_sales) AS chain_sales, MIN(avg_oil_price) AS avg_oil_price FROM weekly_store_family_summary GROUP BY week_start_date) SELECT CASE WHEN avg_oil_price < 50 THEN 'oil<50' ELSE 'oil>=50' END AS oil_regime, COUNT(*) AS num_weeks, AVG(chain_sales) AS avg_weekly_chain_sales FROM weekly_totals GROUP BY oil_regime ORDER BY oil_regime LIMIT 100",
+              "reference_sql": "WITH weekly_chain AS (  SELECT week_start_date, AVG(avg_oil_price) AS oil_price,   SUM(total_sales) AS chain_weekly_sales   FROM weekly_store_family_summary   WHERE avg_oil_price IS NOT NULL   GROUP BY week_start_date) SELECT CASE WHEN oil_price < 50 THEN 'UNDER_50' ELSE 'AT_OR_ABOVE_50' END AS oil_regime, COUNT(*) AS n_weeks, ROUND(AVG(chain_weekly_sales), 2) AS avg_weekly_sales FROM weekly_chain GROUP BY oil_regime ORDER BY oil_regime ASC",
+              "actual_row_preview": [
+                [
+                  "oil<50",
+                  97.0,
+                  5331407.41627237
+                ],
+                [
+                  "oil>=50",
+                  145.0,
+                  3837920.35060109
+                ]
+              ],
+              "expected_row_preview": [
+                [
+                  "AT_OR_ABOVE_50",
+                  145,
+                  3837920.35
+                ],
+                [
+                  "UNDER_50",
+                  97,
+                  5331407.42
+                ]
+              ],
+              "error": null
+            }
+          ]
         }
       }
     }
@@ -3509,6 +5704,9 @@
         "description": "Schema with table/column descriptions + bounded self-repair (up to 2 repairs)",
         "max_repairs": 2,
         "include_descriptions": true,
+        "include_grain_notes": false,
+        "grain_aware_prompt": false,
+        "check_grain_sanity": false,
         "n_total": 45,
         "n_completed": 45,
         "n_unresolved": 0,
@@ -3680,6 +5878,9 @@
         "description": "Schema with table/column descriptions + repair loop disabled (0 repairs)",
         "max_repairs": 0,
         "include_descriptions": true,
+        "include_grain_notes": false,
+        "grain_aware_prompt": false,
+        "check_grain_sanity": false,
         "n_total": 45,
         "n_completed": 45,
         "n_unresolved": 0,
@@ -3936,6 +6137,9 @@
         "description": "Bare schema (table/column names and types only, no descriptions) + repair on",
         "max_repairs": 2,
         "include_descriptions": false,
+        "include_grain_notes": false,
+        "grain_aware_prompt": false,
+        "check_grain_sanity": false,
         "n_total": 45,
         "n_completed": 45,
         "n_unresolved": 0,
@@ -4126,6 +6330,396 @@
             ],
             "error": null
           },
+          {
+            "id": "hard_06",
+            "difficulty": "hard",
+            "question": "In sim_policy_summary, at service_level = 0.95 (where is_sensitivity_extrapolation is FALSE), how many average_inventory_units does lightgbm_point_safety_stock save compared with seasonal_naive_safety_stock for each lead_time_days?",
+            "category": "wrong_column_semantics",
+            "generated_sql": "WITH sn AS (SELECT lead_time_days, average_inventory_units AS sn_inv FROM sim_policy_summary WHERE policy = 'seasonal_naive_safety_stock' AND ROUND(service_level, 2) = 0.95), lgb AS (SELECT lead_time_days, average_inventory_units AS lgb_inv FROM sim_policy_summary WHERE policy = 'lightgbm_point_safety_stock' AND ROUND(service_level, 2) = 0.95) SELECT sn.lead_time_days, ROUND(sn.sn_inv - lgb.lgb_inv, 2) AS inventory_saved_units FROM sn JOIN lgb ON sn.lead_time_days = lgb.lead_time_days ORDER BY sn.lead_time_days ASC LIMIT 100",
+            "reference_sql": "WITH sn AS (  SELECT lead_time_days, average_inventory_units AS sn_inv   FROM sim_policy_summary   WHERE policy = 'seasonal_naive_safety_stock' AND ROUND(service_level, 2) = 0.95     AND is_sensitivity_extrapolation = FALSE), lgb AS (  SELECT lead_time_days, average_inventory_units AS lgb_inv   FROM sim_policy_summary   WHERE policy = 'lightgbm_point_safety_stock' AND ROUND(service_level, 2) = 0.95     AND is_sensitivity_extrapolation = FALSE) SELECT sn.lead_time_days, ROUND(sn.sn_inv - lgb.lgb_inv, 2) AS inventory_saved_units FROM sn JOIN lgb ON sn.lead_time_days = lgb.lead_time_days ORDER BY sn.lead_time_days ASC",
+            "actual_row_preview": [
+              [
+                14.0,
+                512283.9
+              ],
+              [
+                3.0,
+                334058.37
+              ]
+            ],
+            "expected_row_preview": [
+              [
+                3,
+                334058.37
+              ],
+              [
+                7,
+                359931.89
+              ]
+            ],
+            "error": null
+          },
+          {
+            "id": "hard_08",
+            "difficulty": "hard",
+            "question": "Compare chain-wide weekly unit sales in weeks with oil price below 50 vs weeks with oil price of 50 or above: what is the number of weeks and average weekly chain sales in each regime?",
+            "category": "wrong_join_or_aggregation",
+            "generated_sql": "SELECT CASE WHEN avg_oil_price < 50 THEN 'UNDER_50' ELSE 'AT_OR_ABOVE_50' END AS oil_regime, COUNT(DISTINCT week_start_date) AS n_weeks, ROUND(AVG(total_sales), 2) AS avg_weekly_sales FROM weekly_store_family_summary WHERE NOT avg_oil_price IS NULL GROUP BY oil_regime ORDER BY oil_regime ASC LIMIT 100",
+            "reference_sql": "WITH weekly_chain AS (  SELECT week_start_date, AVG(avg_oil_price) AS oil_price,   SUM(total_sales) AS chain_weekly_sales   FROM weekly_store_family_summary   WHERE avg_oil_price IS NOT NULL   GROUP BY week_start_date) SELECT CASE WHEN oil_price < 50 THEN 'UNDER_50' ELSE 'AT_OR_ABOVE_50' END AS oil_regime, COUNT(*) AS n_weeks, ROUND(AVG(chain_weekly_sales), 2) AS avg_weekly_sales FROM weekly_chain GROUP BY oil_regime ORDER BY oil_regime ASC",
+            "actual_row_preview": [
+              [
+                "AT_OR_ABOVE_50",
+                145.0,
+                2153.72
+              ],
+              [
+                "UNDER_50",
+                97.0,
+                2991.81
+              ]
+            ],
+            "expected_row_preview": [
+              [
+                "AT_OR_ABOVE_50",
+                145,
+                3837920.35
+              ],
+              [
+                "UNDER_50",
+                97,
+                5331407.42
+              ]
+            ],
+            "error": null
+          }
+        ]
+      },
+      "catalog_grain_notes_repair_on": {
+        "config": "catalog_grain_notes_repair_on",
+        "description": "Full schema + explicit table grain/fan-out notes in catalog.py + repair on",
+        "max_repairs": 2,
+        "include_descriptions": true,
+        "include_grain_notes": true,
+        "grain_aware_prompt": false,
+        "check_grain_sanity": false,
+        "n_total": 45,
+        "n_completed": 45,
+        "n_unresolved": 0,
+        "unresolved_questions": [],
+        "infrastructure_failures_count": 0,
+        "infrastructure_failures": [],
+        "n_answerable": 40,
+        "n_unanswerable": 5,
+        "execution_correct": 38,
+        "execution_accuracy": 0.95,
+        "execution_accuracy_wilson_95_ci": [
+          0.835,
+          0.9862
+        ],
+        "valid_sql_count": 40,
+        "valid_sql_rate": 1.0,
+        "valid_sql_wilson_95_ci": [
+          0.9124,
+          1.0
+        ],
+        "refusal_correct": 5,
+        "refusal_accuracy": 1.0,
+        "refusal_wilson_95_ci": [
+          0.5655,
+          1.0
+        ],
+        "mean_attempts": 1.089,
+        "latency_p50_ms": 14.5,
+        "latency_p95_ms": 19.0,
+        "total_tokens": 180823,
+        "by_difficulty": {
+          "easy": {
+            "correct": 10,
+            "total": 10,
+            "accuracy": 1.0,
+            "wilson_95_ci": [
+              0.7225,
+              1.0
+            ]
+          },
+          "medium": {
+            "correct": 20,
+            "total": 20,
+            "accuracy": 1.0,
+            "wilson_95_ci": [
+              0.8389,
+              1.0
+            ]
+          },
+          "hard": {
+            "correct": 8,
+            "total": 10,
+            "accuracy": 0.8,
+            "wilson_95_ci": [
+              0.4902,
+              0.9433
+            ]
+          }
+        },
+        "failure_counts": {
+          "wrong_join_or_aggregation": 1,
+          "wrong_column_semantics": 1,
+          "hallucinated_table_or_column": 0,
+          "syntax_error": 0,
+          "ambiguity": 0,
+          "guard_blocked": 0,
+          "timeout": 0
+        },
+        "failed_questions": [
+          {
+            "id": "hard_06",
+            "difficulty": "hard",
+            "question": "In sim_policy_summary, at service_level = 0.95 (where is_sensitivity_extrapolation is FALSE), how many average_inventory_units does lightgbm_point_safety_stock save compared with seasonal_naive_safety_stock for each lead_time_days?",
+            "category": "wrong_column_semantics",
+            "generated_sql": "WITH sn AS (SELECT lead_time_days, average_inventory_units AS sn_inv FROM sim_policy_summary WHERE policy = 'seasonal_naive_safety_stock' AND ROUND(service_level, 2) = 0.95), lgb AS (SELECT lead_time_days, average_inventory_units AS lgb_inv FROM sim_policy_summary WHERE policy = 'lightgbm_point_safety_stock' AND ROUND(service_level, 2) = 0.95) SELECT sn.lead_time_days, ROUND(sn.sn_inv - lgb.lgb_inv, 2) AS inventory_saved_units FROM sn JOIN lgb ON sn.lead_time_days = lgb.lead_time_days ORDER BY sn.lead_time_days ASC LIMIT 100",
+            "reference_sql": "WITH sn AS (  SELECT lead_time_days, average_inventory_units AS sn_inv   FROM sim_policy_summary   WHERE policy = 'seasonal_naive_safety_stock' AND ROUND(service_level, 2) = 0.95     AND is_sensitivity_extrapolation = FALSE), lgb AS (  SELECT lead_time_days, average_inventory_units AS lgb_inv   FROM sim_policy_summary   WHERE policy = 'lightgbm_point_safety_stock' AND ROUND(service_level, 2) = 0.95     AND is_sensitivity_extrapolation = FALSE) SELECT sn.lead_time_days, ROUND(sn.sn_inv - lgb.lgb_inv, 2) AS inventory_saved_units FROM sn JOIN lgb ON sn.lead_time_days = lgb.lead_time_days ORDER BY sn.lead_time_days ASC",
+            "actual_row_preview": [
+              [
+                14.0,
+                512283.9
+              ],
+              [
+                3.0,
+                334058.37
+              ]
+            ],
+            "expected_row_preview": [
+              [
+                3,
+                334058.37
+              ],
+              [
+                7,
+                359931.89
+              ]
+            ],
+            "error": null
+          },
+          {
+            "id": "hard_08",
+            "difficulty": "hard",
+            "question": "Compare chain-wide weekly unit sales in weeks with oil price below 50 vs weeks with oil price of 50 or above: what is the number of weeks and average weekly chain sales in each regime?",
+            "category": "wrong_join_or_aggregation",
+            "generated_sql": "SELECT CASE WHEN avg_oil_price < 50 THEN 'UNDER_50' ELSE 'AT_OR_ABOVE_50' END AS oil_regime, COUNT(DISTINCT week_start_date) AS n_weeks, ROUND(AVG(total_sales), 2) AS avg_weekly_sales FROM weekly_store_family_summary WHERE NOT avg_oil_price IS NULL GROUP BY oil_regime ORDER BY oil_regime ASC LIMIT 100",
+            "reference_sql": "WITH weekly_chain AS (  SELECT week_start_date, AVG(avg_oil_price) AS oil_price,   SUM(total_sales) AS chain_weekly_sales   FROM weekly_store_family_summary   WHERE avg_oil_price IS NOT NULL   GROUP BY week_start_date) SELECT CASE WHEN oil_price < 50 THEN 'UNDER_50' ELSE 'AT_OR_ABOVE_50' END AS oil_regime, COUNT(*) AS n_weeks, ROUND(AVG(chain_weekly_sales), 2) AS avg_weekly_sales FROM weekly_chain GROUP BY oil_regime ORDER BY oil_regime ASC",
+            "actual_row_preview": [
+              [
+                "AT_OR_ABOVE_50",
+                145.0,
+                2153.72
+              ],
+              [
+                "UNDER_50",
+                97.0,
+                2991.81
+              ]
+            ],
+            "expected_row_preview": [
+              [
+                "AT_OR_ABOVE_50",
+                145,
+                3837920.35
+              ],
+              [
+                "UNDER_50",
+                97,
+                5331407.42
+              ]
+            ],
+            "error": null
+          }
+        ]
+      },
+      "grain_aware_prompt_repair_on": {
+        "config": "grain_aware_prompt_repair_on",
+        "description": "Full schema + catalog grain notes + grain-aware prompt checklist + repair on",
+        "max_repairs": 2,
+        "include_descriptions": true,
+        "include_grain_notes": true,
+        "grain_aware_prompt": true,
+        "check_grain_sanity": false,
+        "n_total": 45,
+        "n_completed": 45,
+        "n_unresolved": 0,
+        "unresolved_questions": [],
+        "infrastructure_failures_count": 0,
+        "infrastructure_failures": [],
+        "n_answerable": 40,
+        "n_unanswerable": 5,
+        "execution_correct": 39,
+        "execution_accuracy": 0.975,
+        "execution_accuracy_wilson_95_ci": [
+          0.8712,
+          0.9956
+        ],
+        "valid_sql_count": 40,
+        "valid_sql_rate": 1.0,
+        "valid_sql_wilson_95_ci": [
+          0.9124,
+          1.0
+        ],
+        "refusal_correct": 5,
+        "refusal_accuracy": 1.0,
+        "refusal_wilson_95_ci": [
+          0.5655,
+          1.0
+        ],
+        "mean_attempts": 1.089,
+        "latency_p50_ms": 14.5,
+        "latency_p95_ms": 19.0,
+        "total_tokens": 198204,
+        "by_difficulty": {
+          "easy": {
+            "correct": 10,
+            "total": 10,
+            "accuracy": 1.0,
+            "wilson_95_ci": [
+              0.7225,
+              1.0
+            ]
+          },
+          "medium": {
+            "correct": 20,
+            "total": 20,
+            "accuracy": 1.0,
+            "wilson_95_ci": [
+              0.8389,
+              1.0
+            ]
+          },
+          "hard": {
+            "correct": 9,
+            "total": 10,
+            "accuracy": 0.9,
+            "wilson_95_ci": [
+              0.5958,
+              0.9821
+            ]
+          }
+        },
+        "failure_counts": {
+          "wrong_join_or_aggregation": 0,
+          "wrong_column_semantics": 1,
+          "hallucinated_table_or_column": 0,
+          "syntax_error": 0,
+          "ambiguity": 0,
+          "guard_blocked": 0,
+          "timeout": 0
+        },
+        "failed_questions": [
+          {
+            "id": "hard_06",
+            "difficulty": "hard",
+            "question": "In sim_policy_summary, at service_level = 0.95 (where is_sensitivity_extrapolation is FALSE), how many average_inventory_units does lightgbm_point_safety_stock save compared with seasonal_naive_safety_stock for each lead_time_days?",
+            "category": "wrong_column_semantics",
+            "generated_sql": "WITH sn AS (SELECT lead_time_days, average_inventory_units AS sn_inv FROM sim_policy_summary WHERE policy = 'seasonal_naive_safety_stock' AND ROUND(service_level, 2) = 0.95), lgb AS (SELECT lead_time_days, average_inventory_units AS lgb_inv FROM sim_policy_summary WHERE policy = 'lightgbm_point_safety_stock' AND ROUND(service_level, 2) = 0.95) SELECT sn.lead_time_days, ROUND(sn.sn_inv - lgb.lgb_inv, 2) AS inventory_saved_units FROM sn JOIN lgb ON sn.lead_time_days = lgb.lead_time_days ORDER BY sn.lead_time_days ASC LIMIT 100",
+            "reference_sql": "WITH sn AS (  SELECT lead_time_days, average_inventory_units AS sn_inv   FROM sim_policy_summary   WHERE policy = 'seasonal_naive_safety_stock' AND ROUND(service_level, 2) = 0.95     AND is_sensitivity_extrapolation = FALSE), lgb AS (  SELECT lead_time_days, average_inventory_units AS lgb_inv   FROM sim_policy_summary   WHERE policy = 'lightgbm_point_safety_stock' AND ROUND(service_level, 2) = 0.95     AND is_sensitivity_extrapolation = FALSE) SELECT sn.lead_time_days, ROUND(sn.sn_inv - lgb.lgb_inv, 2) AS inventory_saved_units FROM sn JOIN lgb ON sn.lead_time_days = lgb.lead_time_days ORDER BY sn.lead_time_days ASC",
+            "actual_row_preview": [
+              [
+                14.0,
+                512283.9
+              ],
+              [
+                3.0,
+                334058.37
+              ]
+            ],
+            "expected_row_preview": [
+              [
+                3,
+                334058.37
+              ],
+              [
+                7,
+                359931.89
+              ]
+            ],
+            "error": null
+          }
+        ]
+      },
+      "grain_sanity_check_repair_on": {
+        "config": "grain_sanity_check_repair_on",
+        "description": "Full schema + SUM-over-repeated-grain AST sanity check repair trigger",
+        "max_repairs": 2,
+        "include_descriptions": true,
+        "include_grain_notes": false,
+        "grain_aware_prompt": false,
+        "check_grain_sanity": true,
+        "n_total": 45,
+        "n_completed": 45,
+        "n_unresolved": 0,
+        "unresolved_questions": [],
+        "infrastructure_failures_count": 0,
+        "infrastructure_failures": [],
+        "n_answerable": 40,
+        "n_unanswerable": 5,
+        "execution_correct": 38,
+        "execution_accuracy": 0.95,
+        "execution_accuracy_wilson_95_ci": [
+          0.835,
+          0.9862
+        ],
+        "valid_sql_count": 40,
+        "valid_sql_rate": 1.0,
+        "valid_sql_wilson_95_ci": [
+          0.9124,
+          1.0
+        ],
+        "refusal_correct": 5,
+        "refusal_accuracy": 1.0,
+        "refusal_wilson_95_ci": [
+          0.5655,
+          1.0
+        ],
+        "mean_attempts": 1.111,
+        "latency_p50_ms": 14.5,
+        "latency_p95_ms": 19.0,
+        "total_tokens": 158555,
+        "by_difficulty": {
+          "easy": {
+            "correct": 10,
+            "total": 10,
+            "accuracy": 1.0,
+            "wilson_95_ci": [
+              0.7225,
+              1.0
+            ]
+          },
+          "medium": {
+            "correct": 20,
+            "total": 20,
+            "accuracy": 1.0,
+            "wilson_95_ci": [
+              0.8389,
+              1.0
+            ]
+          },
+          "hard": {
+            "correct": 8,
+            "total": 10,
+            "accuracy": 0.8,
+            "wilson_95_ci": [
+              0.4902,
+              0.9433
+            ]
+          }
+        },
+        "failure_counts": {
+          "wrong_join_or_aggregation": 1,
+          "wrong_column_semantics": 1,
+          "hallucinated_table_or_column": 0,
+          "syntax_error": 0,
+          "ambiguity": 0,
+          "guard_blocked": 0,
+          "timeout": 0
+        },
+        "failed_questions": [
           {
             "id": "hard_06",
             "difficulty": "hard",
