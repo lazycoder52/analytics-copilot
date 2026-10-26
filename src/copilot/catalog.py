@@ -307,19 +307,31 @@ def column_types(con: duckdb.DuckDBPyConnection, table: str) -> dict[str, str]:
     return {r[0]: r[1] for r in rows}
 
 
-def render_catalog(con: duckdb.DuckDBPyConnection | None = None) -> str:
+def render_catalog(
+    con: duckdb.DuckDBPyConnection | None = None,
+    *,
+    include_descriptions: bool = True,
+) -> str:
     """Render the catalog as plain text for prompts.
 
     With a connection, only tables that are loaded are described and live column types are
-    included. Without one, the required tables are described without types.
+    included. Without one, the required tables are described without types. When
+    ``include_descriptions`` is False, only table names, column names, and live column types
+    are rendered (used for the bare-schema ablation in the evaluation harness).
     """
     tables = loaded_tables(con) if con is not None else REQUIRED_TABLES
     blocks: list[str] = []
     for table in tables:
         types = column_types(con, table.name) if con is not None else {}
-        lines = [f"TABLE {table.name}: {table.description}"]
+        if include_descriptions:
+            lines = [f"TABLE {table.name}: {table.description}"]
+        else:
+            lines = [f"TABLE {table.name}:"]
         for col in table.columns:
             type_part = f" ({types[col.name]})" if col.name in types else ""
-            lines.append(f"  - {col.name}{type_part}: {col.description}")
+            if include_descriptions:
+                lines.append(f"  - {col.name}{type_part}: {col.description}")
+            else:
+                lines.append(f"  - {col.name}{type_part}")
         blocks.append("\n".join(lines))
     return "\n\n".join(blocks)
