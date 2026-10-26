@@ -20,12 +20,16 @@ def default_data_dir() -> Path:
     return Path(__file__).resolve().parents[2] / "data"
 
 
-def load_database(data_dir: Path | str | None = None) -> duckdb.DuckDBPyConnection:
+def load_database(
+    data_dir: Path | str | None = None,
+    harden: bool = True,
+) -> duckdb.DuckDBPyConnection:
     """Create an in-memory DuckDB connection with one table per Parquet file.
 
     Required tables must be present. Optional tables (see ``OPTIONAL_TABLE_NAMES``) are
     loaded only if their file exists. Tables are materialised (CREATE TABLE AS) so later
-    queries never touch the filesystem.
+    queries never touch the filesystem. If ``harden`` is True, external access is disabled
+    and configuration is locked.
     """
     directory = Path(data_dir) if data_dir is not None else default_data_dir()
     missing = [n for n in TABLE_NAMES if not (directory / f"{n}.parquet").is_file()]
@@ -42,4 +46,10 @@ def load_database(data_dir: Path | str | None = None) -> duckdb.DuckDBPyConnecti
     for name in names:
         path = (directory / f"{name}.parquet").as_posix()
         con.execute(f'CREATE TABLE "{name}" AS SELECT * FROM read_parquet(?)', [path])
+
+    if harden:
+        from copilot.guard import harden_connection
+
+        harden_connection(con)
+
     return con
