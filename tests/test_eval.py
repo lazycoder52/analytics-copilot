@@ -102,6 +102,8 @@ def test_readme_figures_match_metrics_json():
     metrics = json.loads(DEFAULT_METRICS_PATH.read_text(encoding="utf-8"))
     actual_readme = DEFAULT_README_PATH.read_text(encoding="utf-8")
     expected_readme = render_readme(metrics)
+    assert "## Evaluation status" in actual_readme
+    assert f"`{metrics['provider']}` (model `{metrics['model']}`" in actual_readme
     assert actual_readme == expected_readme, (
         "README.md is out of sync with metrics/metrics.json; run `python -m copilot.readme_gen`."
     )

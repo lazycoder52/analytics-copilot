@@ -6,6 +6,14 @@ over tracked Parquet aggregates derived from the
 (Corporación Favorita grocery store sales across 54 stores and 33 product families
 in Ecuador).
 
+## Evaluation status
+
+- **Active provider in `metrics/metrics.json`**: `mock` (model `mock-sql-v1`,
+  cached in `evals/cache/mock_mock-sql-v1.jsonl`).
+- **Interpretation**: Current metrics come from the deterministic `MockProvider`
+  (**harness validation, not model quality**); latency and token figures are mock
+  values used to verify offline replay, ablation logic, and CI reproducibility.
+
 ## Problem
 
 Business and operations teams frequently ask ad-hoc analytical questions over demand
