@@ -34,3 +34,27 @@ jobs:
           cache: pip
       - run: pip install -e ".[dev]"
       - run: pytest
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker image
+        run: docker build -t analytics-copilot:ci .
+      - name: Start container and verify /health
+        run: |
+          docker run -d --name copilot-ci -p 8000:8000 analytics-copilot:ci
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8000/health > health.json 2>/dev/null; then
+              cat health.json
+              grep -q '"status":"ok"' health.json
+              grep -q '"tables_loaded":6' health.json
+              docker rm -f copilot-ci
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs copilot-ci || true
+          docker rm -f copilot-ci || true
+          exit 1
+
