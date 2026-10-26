@@ -536,7 +536,10 @@ def evaluate_config(
                             "category": cat,
                             "generated_sql": res.sql,
                             "reference_sql": item["sql"],
-                            "actual_row_preview": actual_rows[:2],
+                            "actual_row_preview": sorted(
+                                ([_normalize_cell(c) for c in row] for row in actual_rows),
+                                key=str,
+                            )[:2],
                             "expected_row_preview": item["expected_rows"][:2],
                             "error": None,
                         }
@@ -579,7 +582,9 @@ def evaluate_config(
                         "category": cat,
                         "generated_sql": res.sql,
                         "reference_sql": "",
-                        "actual_row_preview": [list(r) for r in res.rows[:2]],
+                        "actual_row_preview": [
+                            [_normalize_cell(c) for c in row] for row in res.rows[:2]
+                        ],
                         "expected_row_preview": [],
                         "error": "Model failed to refuse unanswerable question",
                     }
@@ -768,17 +773,14 @@ def run_evaluation(
         harness_validation_run: dict[str, Any] | None = None
 
         if cached_provider.provider_name != "mock":
-            # Attach secondary live run (Pollinations openai-fast) if cached
-            pollinations_cache = resolved_cache_dir / "openai_compatible_openai-fast.jsonl"
-            if (
-                pollinations_cache.is_file()
-                and cached_provider.cache_path.name != pollinations_cache.name
-            ):
+            # Attach secondary live run (Groq openai/gpt-oss-20b) if cached
+            run_b_cache = resolved_cache_dir / "openai_compatible_openai_gpt-oss-20b.jsonl"
+            if run_b_cache.is_file() and cached_provider.cache_path.name != run_b_cache.name:
                 sec = _evaluate_secondary_cached_run(
                     provider_name="openai_compatible",
-                    model_name="openai-fast",
-                    base_url="https://text.pollinations.ai/openai",
-                    config_names=("full_schema_repair_on",),
+                    model_name="openai/gpt-oss-20b",
+                    base_url="https://api.groq.com/openai/v1",
+                    config_names=tuple(c.name for c in DEFAULT_CONFIGS),
                     gold_items=gold_items,
                     con=con,
                     cache_dir=resolved_cache_dir,
