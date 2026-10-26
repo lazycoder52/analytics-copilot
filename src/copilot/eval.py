@@ -50,6 +50,7 @@ from copilot.providers import (
 )
 
 DEFAULT_GOLD_PATH = Path(__file__).resolve().parents[2] / "evals" / "gold.jsonl"
+DEFAULT_HELDOUT_PATH = Path(__file__).resolve().parents[2] / "evals" / "heldout.jsonl"
 DEFAULT_METRICS_PATH = Path(__file__).resolve().parents[2] / "metrics" / "metrics.json"
 
 FAILURE_CATEGORIES: tuple[str, ...] = (
@@ -751,8 +752,14 @@ def run_evaluation(
         use_cache=False,
         replay_only=replay,
     )
+    heldout_items: list[dict[str, Any]] = []
+    if Path(gold_path).resolve() == DEFAULT_GOLD_PATH.resolve() and DEFAULT_HELDOUT_PATH.is_file():
+        heldout_items = load_gold_set(DEFAULT_HELDOUT_PATH)
+
     if base_provider.provider_name == "mock":
-        base_provider = build_gold_mock_provider(gold_items, model=base_provider.model_name)
+        base_provider = build_gold_mock_provider(
+            [*gold_items, *heldout_items], model=base_provider.model_name
+        )
 
     cached_provider = CachedProvider(
         base_provider,
@@ -768,6 +775,45 @@ def run_evaluation(
         configs_out: dict[str, Any] = {}
         for cfg in selected_configs:
             configs_out[cfg.name] = evaluate_config(cfg, gold_items, con, cached_provider)
+
+        heldout_out: dict[str, Any] | None = None
+        if heldout_items:
+            heldout_configs_out: dict[str, Any] = {}
+            for cfg in selected_configs:
+                heldout_configs_out[cfg.name] = evaluate_config(
+                    cfg, heldout_items, con, cached_provider
+                )
+            hp = heldout_configs_out[selected_configs[0].name]
+            heldout_out = {
+                "heldout_set_path": "evals/heldout.jsonl",
+                "review_status": "needs human review",
+                "provider": cached_provider.provider_name,
+                "model": cached_provider.model_name,
+                "response_model": cached_provider.response_model,
+                "base_url_host": cached_provider.base_url_host,
+                "temperature": DEFAULT_TEMPERATURE,
+                "run_date": cached_provider.run_date,
+                "n_total": len(heldout_items),
+                "n_completed": hp["n_completed"],
+                "n_unresolved": hp["n_unresolved"],
+                "infrastructure_failures_count": hp["infrastructure_failures_count"],
+                "n_answerable": hp["n_answerable"],
+                "n_unanswerable": hp["n_unanswerable"],
+                "primary_config": selected_configs[0].name,
+                "headline": {
+                    "execution_accuracy": hp["execution_accuracy"],
+                    "execution_correct": hp["execution_correct"],
+                    "execution_wilson_95_ci": hp["execution_accuracy_wilson_95_ci"],
+                    "valid_sql_rate": hp["valid_sql_rate"],
+                    "valid_sql_count": hp["valid_sql_count"],
+                    "valid_sql_wilson_95_ci": hp["valid_sql_wilson_95_ci"],
+                    "mean_attempts": hp["mean_attempts"],
+                    "latency_p50_ms": hp["latency_p50_ms"],
+                    "latency_p95_ms": hp["latency_p95_ms"],
+                    "total_tokens": hp["total_tokens"],
+                },
+                "configurations": heldout_configs_out,
+            }
 
         secondary_live_runs: list[dict[str, Any]] = []
         harness_validation_run: dict[str, Any] | None = None
@@ -839,6 +885,8 @@ def run_evaluation(
         },
         "configurations": configs_out,
     }
+    if heldout_out is not None:
+        report["heldout_evaluation"] = heldout_out
     if secondary_live_runs:
         report["secondary_live_runs"] = secondary_live_runs
     if harness_validation_run is not None:
