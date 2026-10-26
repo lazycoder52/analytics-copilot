@@ -105,7 +105,9 @@ def test_attack_duckdb_system_functions():
         validate_and_rewrite_sql("SELECT * FROM duckdb_tables()", ALLOWLIST)
     with pytest.raises(SecurityViolation, match="(?i)duckdb_|system catalog"):
         validate_and_rewrite_sql("SELECT duckdb_memory()", ALLOWLIST)
-    with pytest.raises(SecurityViolation, match="(?i)duckdb_|system catalog|blocked function"):
+    with pytest.raises(
+        SecurityViolation, match="(?i)duckdb_|system catalog|blocked function|allowlist"
+    ):
         validate_and_rewrite_sql("SELECT current_setting('enable_external_access')", ALLOWLIST)
 
 
@@ -344,3 +346,137 @@ def test_duckdb_sandbox_engine_hardening(con):
     # Attempting to re-enable external access must fail
     with pytest.raises(Exception, match="(?i)configuration has been locked"):
         con.execute("SET enable_external_access = true;")
+    with pytest.raises(Exception, match="(?i)configuration has been locked"):
+        con.execute("SET memory_limit = '8GB';")
+    with pytest.raises(Exception, match="(?i)configuration has been locked"):
+        con.execute("SET threads = 64;")
+
+
+def test_harden_connection_sets_memory_and_threads():
+    """memory_limit=256MB and threads=2 are applied before lock_configuration."""
+    import duckdb
+
+    from copilot.guard import DEFAULT_MEMORY_LIMIT, DEFAULT_THREADS, harden_connection
+
+    raw = duckdb.connect(":memory:")
+    try:
+        harden_connection(raw)
+        memory = str(raw.execute("SELECT current_setting('memory_limit')").fetchone()[0])
+        threads = raw.execute("SELECT current_setting('threads')").fetchone()[0]
+        # DuckDB reports 256MB as ~244 MiB.
+        assert "mib" in memory.lower() or "mb" in memory.lower()
+        numeric = float(memory.lower().replace("mib", "").replace("mb", "").strip())
+        assert 200 <= numeric <= 256
+        assert int(threads) == DEFAULT_THREADS
+        assert DEFAULT_MEMORY_LIMIT == "256MB"
+    finally:
+        raw.close()
+
+
+# ---------------------------------------------------------------------------
+# Phase 2.5 additional attack tests (function allowlist, catalogs, resources)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "sql",
+    [
+        "SELECT read_text('C:/Windows/win.ini')",
+        "SELECT read_blob('C:/Windows/win.ini')",
+        "SELECT * FROM parquet_scan('x.parquet')",
+        "SELECT parquet_metadata('x.parquet')",
+        "SELECT parquet_schema('x.parquet')",
+        "SELECT * FROM sniff_csv('x.csv')",
+        "SELECT query('SELECT 1')",
+        "SELECT query_table('weekly_store_family_summary')",
+        "SELECT getenv('PATH')",
+        "SELECT current_query()",
+        "SELECT version()",
+    ],
+)
+def test_attack_blocked_or_non_allowlisted_functions(sql):
+    with pytest.raises(SecurityViolation, match="(?i)allowlist|blocked|table function"):
+        validate_and_rewrite_sql(sql, ALLOWLIST)
+
+
+@pytest.mark.parametrize(
+    "sql",
+    [
+        "SELECT * FROM information_schema.tables",
+        "SELECT * FROM information_schema.columns",
+        "SELECT * FROM duckdb_tables",
+        "SELECT * FROM duckdb_columns()",
+        "SELECT * FROM pragma_database_list()",
+        "SELECT * FROM pragma_table_info('weekly_store_family_summary')",
+        "SELECT * FROM sqlite_master",
+        "SELECT sql FROM sqlite_temp_master",
+    ],
+)
+def test_attack_system_catalog_tables(sql):
+    with pytest.raises(
+        SecurityViolation,
+        match="(?i)information_schema|schema not permitted|system catalog|allowlist|table function",
+    ):
+        validate_and_rewrite_sql(sql, ALLOWLIST)
+
+
+def test_attack_generate_series_and_range_cross_join():
+    with pytest.raises(SecurityViolation, match="(?i)generate_series|range|resource"):
+        validate_and_rewrite_sql("SELECT * FROM generate_series(1, 100000000)", ALLOWLIST)
+    with pytest.raises(SecurityViolation, match="(?i)generate_series|range|resource"):
+        validate_and_rewrite_sql("SELECT * FROM range(1, 100000000)", ALLOWLIST)
+    with pytest.raises(SecurityViolation, match="(?i)generate_series|range|resource"):
+        validate_and_rewrite_sql(
+            "SELECT * FROM weekly_store_family_summary CROSS JOIN generate_series(1, 1000000)",
+            ALLOWLIST,
+        )
+
+
+def test_attack_deeply_nested_expression():
+    nested = "1"
+    for _ in range(60):
+        nested = f"({nested} + 1)"
+    sql = f"SELECT {nested} FROM weekly_store_family_summary"
+    with pytest.raises(SecurityViolation, match="(?i)nesting|depth"):
+        validate_and_rewrite_sql(sql, ALLOWLIST)
+
+
+def test_attack_quoted_identifier_lookalikes():
+    with pytest.raises(SecurityViolation, match="(?i)quoted identifier|allowlist|path"):
+        validate_and_rewrite_sql(
+            'SELECT * FROM " weekly_store_family_summary"',
+            ALLOWLIST,
+        )
+    with pytest.raises(SecurityViolation, match="(?i)quoted identifier|allowlist|path"):
+        validate_and_rewrite_sql(
+            'SELECT * FROM "weekly_store_family_summary.parquet"',
+            ALLOWLIST,
+        )
+    with pytest.raises(SecurityViolation, match="(?i)quoted identifier|allowlist"):
+        validate_and_rewrite_sql(
+            'SELECT * FROM "sim_policy_summary\u200b"',
+            ALLOWLIST,
+        )
+
+
+def test_quoted_allowlisted_identifier_is_accepted():
+    rewritten = validate_and_rewrite_sql(
+        'SELECT 1 FROM "weekly_store_family_summary"',
+        ALLOWLIST,
+    )
+    assert "weekly_store_family_summary" in rewritten.lower()
+
+
+def test_allowlisted_analytics_functions_are_accepted():
+    sql = """
+    SELECT
+      family,
+      COUNT(*) AS n,
+      SUM(total_sales) AS total,
+      DATE_TRUNC('month', week_start_date) AS month,
+      ROW_NUMBER() OVER (PARTITION BY family ORDER BY SUM(total_sales) DESC) AS rk
+    FROM weekly_store_family_summary
+    GROUP BY family, DATE_TRUNC('month', week_start_date)
+    """
+    rewritten = validate_and_rewrite_sql(sql, ALLOWLIST)
+    assert "LIMIT" in rewritten.upper()
