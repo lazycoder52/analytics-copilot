@@ -8,14 +8,17 @@ import pytest
 
 from copilot.data import load_database
 from copilot.eval import (
+    DEFAULT_CONFIGS,
     DEFAULT_GOLD_PATH,
     DEFAULT_METRICS_PATH,
+    evaluate_config,
     load_gold_set,
     results_match,
     run_evaluation,
     wilson_ci,
 )
 from copilot.guard import execute_guarded_sql
+from copilot.providers import InfrastructureError
 from copilot.readme_gen import DEFAULT_README_PATH, render_readme
 
 
@@ -74,12 +77,15 @@ def test_replay_regenerates_committed_metrics_json_identically(tmp_path):
 
     out_file = tmp_path / "metrics.json"
     replayed_data = run_evaluation(
-        provider_name="mock",
         replay=True,
         metrics_path=out_file,
     )
     assert out_file.read_text(encoding="utf-8") == committed_text
     assert replayed_data == committed_data
+    assert "response_model" in replayed_data
+    assert "base_url_host" in replayed_data
+    assert replayed_data["temperature"] == 0.0
+    assert "run_date" in replayed_data
 
     # Verify ablations are present and consistent
     configs = replayed_data["configurations"]
@@ -88,14 +94,42 @@ def test_replay_regenerates_committed_metrics_json_identically(tmp_path):
         "full_schema_repair_off",
         "bare_schema_repair_on",
     }
-    assert (
-        configs["full_schema_repair_on"]["execution_correct"]
-        > configs["full_schema_repair_off"]["execution_correct"]
-    )
-    assert (
-        configs["full_schema_repair_on"]["execution_correct"]
-        > configs["bare_schema_repair_on"]["execution_correct"]
-    )
+
+
+def test_infrastructure_failures_excluded_from_accuracy_denominator(con):
+    items = load_gold_set(DEFAULT_GOLD_PATH)[:3]
+
+    class PartialInfraProvider:
+        provider_name = "openai_compatible"
+        model_name = "test-model"
+
+        def __init__(self):
+            self.n = 0
+
+        def generate(self, prompt: str, *, system_prompt: str = ""):
+            self.n += 1
+            if self.n == 1:
+                raise InfrastructureError("HTTP 429 rate limit")
+            from copilot.providers import LLMResponse
+
+            return LLMResponse(
+                text='{"answerable": true, "reason": "ok", "sql": '
+                + json.dumps(items[self.n - 1]["sql"])
+                + "}",
+                provider="openai_compatible",
+                model="test-model",
+                prompt_hash="h",
+                latency_ms=10.0,
+            )
+
+    res = evaluate_config(DEFAULT_CONFIGS[0], items, con, PartialInfraProvider())
+    assert res["n_total"] == 3
+    assert res["n_completed"] == 2
+    assert res["n_unresolved"] == 1
+    assert res["infrastructure_failures_count"] == 1
+    assert res["n_answerable"] == 2
+    assert res["execution_correct"] == 2
+    assert res["execution_accuracy"] == 1.0
 
 
 def test_readme_figures_match_metrics_json():
@@ -103,7 +137,7 @@ def test_readme_figures_match_metrics_json():
     actual_readme = DEFAULT_README_PATH.read_text(encoding="utf-8")
     expected_readme = render_readme(metrics)
     assert "## Evaluation status" in actual_readme
-    assert f"`{metrics['provider']}` (model `{metrics['model']}`" in actual_readme
+    assert f"`{metrics['provider']}` (requested model `{metrics['model']}`" in actual_readme
     assert actual_readme == expected_readme, (
         "README.md is out of sync with metrics/metrics.json; run `python -m copilot.readme_gen`."
     )

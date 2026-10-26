@@ -18,7 +18,9 @@ def _fmt_ci(ci: list[float]) -> str:
     return f"[{ci[0] * 100:.1f}%, {ci[1] * 100:.1f}%]"
 
 
-def _cfg_row(cfg: dict[str, Any], label: str, n_ans: int, n_unans: int) -> str:
+def _cfg_row(cfg: dict[str, Any], label: str) -> str:
+    n_ans = cfg["n_answerable"]
+    n_unans = cfg["n_unanswerable"]
     name = f"`{cfg['config']}`"
     exec_str = f"{cfg['execution_correct']}/{n_ans} ({_fmt_pct(cfg['execution_accuracy'])})"
     ci_str = f"`{_fmt_ci(cfg['execution_accuracy_wilson_95_ci'])}`"
@@ -41,26 +43,184 @@ def _fail_row(
     return f"| `{cat}` | {fc_on[cat]} | {fc_off[cat]} | {fc_bare[cat]} | {mechanism} |"
 
 
-def _render_eval_status_block(provider: str, model: str, cache_file: str) -> list[str]:
+def _render_eval_status_block(metrics: dict[str, Any]) -> list[str]:
     """Render the top-level Evaluation status section from `metrics.json` provider fields."""
-    if provider == "mock":
-        return [
-            "## Evaluation status",
-            "",
-            f"- **Active provider in `metrics/metrics.json`**: `{provider}` (model `{model}`,",
-            f"  cached in `{cache_file}`).",
-            "- **Interpretation**: Current metrics come from the deterministic `MockProvider`",
-            "  (**harness validation, not model quality**); latency and token figures are mock",
-            "  values used to verify offline replay, ablation logic, and CI reproducibility.",
-        ]
-    return [
+    provider = metrics["provider"]
+    model = metrics["model"]
+    response_model = metrics.get("response_model", model)
+    host = metrics.get("base_url_host", "local-mock")
+    temp = metrics.get("temperature", 0.0)
+    run_date = metrics.get("run_date", "2026-10-26")
+    cache_file = metrics["cache_file"]
+    n_comp = metrics.get("n_completed", metrics["n_total"])
+    n_tot = metrics["n_total"]
+    n_unres = metrics.get("n_unresolved", 0)
+    infra_cnt = metrics.get("infrastructure_failures_count", 0)
+
+    lines = [
         "## Evaluation status",
         "",
-        f"- **Active provider in `metrics/metrics.json`**: `{provider}` (model `{model}`,",
-        f"  cached in `{cache_file}`).",
-        "- **Interpretation**: Current metrics come from recorded real-model evaluation runs",
-        "  replayed deterministically from `evals/cache/*.jsonl`.",
+        (
+            f"- **Primary provider in `metrics/metrics.json`**: `{provider}` "
+            f"(requested model `{model}`, API-returned model `{response_model}`, "
+            f"endpoint host `{host}`, `temperature={temp}`, `run_date={run_date}`, "
+            f"cached in `{cache_file}`)."
+        ),
+        (
+            f"- **Completion & infrastructure status**: **{n_comp}/{n_tot}** questions completed "
+            f"(**{n_unres}** unresolved; **{infra_cnt}** infrastructure failures excluded from "
+            "accuracy denominators)."
+        ),
     ]
+    if provider == "mock":
+        lines.extend(
+            [
+                "- **Interpretation**: Current primary metrics come from the deterministic",
+                "  `MockProvider` (**harness validation, not model quality**); latency and token",
+                "  figures are mock values used to verify offline replay, ablation logic, and CI",
+                "  reproducibility.",
+            ]
+        )
+    else:
+        lines.extend(
+            [
+                "- **Interpretation**: Primary headline and ablation metrics come from recorded",
+                f"  live LLM calls against `{host}` (`{response_model}`) replayed",
+                f"  deterministically from `{cache_file}`.",
+            ]
+        )
+    for sec in metrics.get("secondary_live_runs", []):
+        sec_hl = sec["headline"]
+        lines.append(
+            f"- **Secondary live provider (`{sec['base_url_host']}`)**: `{sec['provider']}` "
+            f"with requested alias `{sec['model']}` (API-returned model "
+            f"`{sec['response_model']}`, `temperature={sec['temperature']}`, "
+            f"`run_date={sec['run_date']}`, cached in `{sec['cache_file']}`) — "
+            f"**{sec['n_completed']}/{sec['n_total']}** completed, execution accuracy "
+            f"**{sec_hl['execution_correct']}/{sec_hl['n_answerable']} "
+            f"({_fmt_pct(sec_hl['execution_accuracy'])})** on `{sec['primary_config']}`."
+        )
+    if metrics.get("harness_validation_run") is not None:
+        hv = metrics["harness_validation_run"]
+        hv_hl = hv["headline"]
+        lines.append(
+            f"- **Harness validation baseline (`MockProvider` / `{hv['model']}`)**: "
+            "**harness validation only, not model quality** (latency and token counts are "
+            f"synthetic mock values; cached in `{hv['cache_file']}`, "
+            f"{hv_hl['execution_correct']}/{hv_hl['n_answerable']} = "
+            f"{_fmt_pct(hv_hl['execution_accuracy'])} on `{hv['primary_config']}`)."
+        )
+    lines.append(
+        "- **Gateway alias note**: Free gateway model aliases such as `openai-fast` route to "
+        "upstream models (currently returning `gpt-oss-20b` on `text.pollinations.ai` and "
+        "`model_unavailable` on `api.llm7.io`) and may change over time."
+    )
+    return lines
+
+
+def _describe_failure_example(idx: int, ex: dict[str, Any]) -> list[str]:
+    """Render a concrete failed question entry from `failed_questions` in `metrics.json`."""
+    qid = ex["id"]
+    cat = ex["category"]
+    q_text = ex["question"]
+    gen_sql = ex.get("generated_sql") or "None (refused or failed before SQL execution)"
+    ref_sql = ex.get("reference_sql") or "None (unanswerable question; expected refusal)"
+    err = ex.get("error")
+    act_prev = ex.get("actual_row_preview") or []
+    exp_prev = ex.get("expected_row_preview") or []
+
+    if err:
+        why = f"Execution failed or mismatched with error: `{err}`."
+    elif qid == "hard_01":
+        why = (
+            "`weekly_transactions` in `weekly_store_family_summary` is a store-level figure "
+            "repeated on all 33 product-family rows for each `(store_nbr, week_start_date)`. "
+            f"Actual preview `{act_prev[:1]}` vs expected `{exp_prev[:1]}`."
+        )
+    elif qid == "hard_08":
+        why = (
+            "The query aggregated `total_sales` at the wrong grain rather than first summing "
+            "chain-wide weekly sales by `week_start_date` in a CTE and then averaging across "
+            f"weeks. Actual preview `{act_prev[:1]}` vs expected `{exp_prev[:1]}`."
+        )
+    else:
+        why = (
+            f"Result set mismatch under `{cat}`: actual row preview `{act_prev[:1]}` "
+            f"did not match reference preview `{exp_prev[:1]}`."
+        )
+
+    return [
+        f"{idx}. **`{qid}` (`{cat}`)**: *{q_text}*",
+        f"   - **Generated SQL**: `{gen_sql}`",
+        f"   - **Reference SQL**: `{ref_sql}`",
+        f"   - **Why it failed**: {why}",
+    ]
+
+
+def _render_multi_provider_section(metrics: dict[str, Any]) -> list[str]:
+    sec_runs = metrics.get("secondary_live_runs", [])
+    hv = metrics.get("harness_validation_run")
+    if not sec_runs and hv is None:
+        return []
+
+    hl = metrics["headline"]
+    n_ans = metrics["n_answerable"]
+    n_unans = metrics["n_unanswerable"]
+    rows = [
+        "### Multi-Provider & Harness Comparison (`full_schema_repair_on`)",
+        "",
+        (
+            "| Run Role | Provider | Requested Model | API-Returned Model | Host | Date "
+            "| Completed | Execution Accuracy | 95% Wilson CI | Valid-SQL Rate "
+            "| Refusal Accuracy | Latency (p50 / p95) | Total Tokens |"
+        ),
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+        (
+            f"| **Primary Live** | `{metrics['provider']}` | `{metrics['model']}` "
+            f"| `{metrics.get('response_model', metrics['model'])}` "
+            f"| `{metrics.get('base_url_host', 'local-mock')}` "
+            f"| `{metrics.get('run_date', '2026-10-26')}` "
+            f"| {metrics.get('n_completed', metrics['n_total'])}/{metrics['n_total']} "
+            f"| {hl['execution_correct']}/{n_ans} ({_fmt_pct(hl['execution_accuracy'])}) "
+            f"| `{_fmt_ci(hl['execution_wilson_95_ci'])}` "
+            f"| {hl['valid_sql_count']}/{n_ans} ({_fmt_pct(hl['valid_sql_rate'])}) "
+            f"| {hl['refusal_correct']}/{n_unans} ({_fmt_pct(hl['refusal_accuracy'])}) "
+            f"| {hl['latency_p50_ms']:.2f} / {hl['latency_p95_ms']:.2f} ms "
+            f"| {hl['total_tokens']} |"
+        ),
+    ]
+    for sec in sec_runs:
+        shl = sec["headline"]
+        sa = shl["n_answerable"]
+        su = shl["n_unanswerable"]
+        rows.append(
+            f"| **Secondary Live** | `{sec['provider']}` | `{sec['model']}` "
+            f"| `{sec['response_model']}` | `{sec['base_url_host']}` | `{sec['run_date']}` "
+            f"| {sec['n_completed']}/{sec['n_total']} "
+            f"| {shl['execution_correct']}/{sa} ({_fmt_pct(shl['execution_accuracy'])}) "
+            f"| `{_fmt_ci(shl['execution_wilson_95_ci'])}` "
+            f"| {shl['valid_sql_count']}/{sa} ({_fmt_pct(shl['valid_sql_rate'])}) "
+            f"| {shl['refusal_correct']}/{su} ({_fmt_pct(shl['refusal_accuracy'])}) "
+            f"| {shl['latency_p50_ms']:.2f} / {shl['latency_p95_ms']:.2f} ms "
+            f"| {shl['total_tokens']} |"
+        )
+    if hv is not None:
+        hhl = hv["headline"]
+        ha = hhl["n_answerable"]
+        hu = hhl["n_unanswerable"]
+        rows.append(
+            f"| **Harness Validation (Mock)** | `{hv['provider']}` | `{hv['model']}` "
+            f"| `{hv['response_model']}` | `{hv['base_url_host']}` | `{hv['run_date']}` "
+            f"| {hv['n_completed']}/{hv['n_total']} "
+            f"| {hhl['execution_correct']}/{ha} ({_fmt_pct(hhl['execution_accuracy'])}) "
+            f"| `{_fmt_ci(hhl['execution_wilson_95_ci'])}` "
+            f"| {hhl['valid_sql_count']}/{ha} ({_fmt_pct(hhl['valid_sql_rate'])}) "
+            f"| {hhl['refusal_correct']}/{hu} ({_fmt_pct(hhl['refusal_accuracy'])}) "
+            f"| {hhl['latency_p50_ms']:.2f} / {hhl['latency_p95_ms']:.2f} ms (mock) "
+            f"| {hhl['total_tokens']} (mock) |"
+        )
+    rows.append("")
+    return rows
 
 
 def render_readme(metrics: dict[str, Any]) -> str:
@@ -71,6 +231,8 @@ def render_readme(metrics: dict[str, Any]) -> str:
     n_unans = metrics["n_unanswerable"]
     provider = metrics["provider"]
     model = metrics["model"]
+    response_model = metrics.get("response_model", model)
+    host = metrics.get("base_url_host", "local-mock")
     cache_file = metrics["cache_file"]
 
     configs = metrics["configurations"]
@@ -87,8 +249,17 @@ def render_readme(metrics: dict[str, Any]) -> str:
     fc_bare = c_bare["failure_counts"]
 
     failed_list = c_on["failed_questions"]
-    ex1 = failed_list[0]
-    ex2 = failed_list[2] if len(failed_list) > 2 else failed_list[1]
+    example_lines: list[str] = []
+    if len(failed_list) >= 2:
+        ex1 = failed_list[0]
+        ex2 = failed_list[2] if len(failed_list) > 2 else failed_list[1]
+        example_lines.extend(_describe_failure_example(1, ex1))
+        example_lines.append("")
+        example_lines.extend(_describe_failure_example(2, ex2))
+    elif len(failed_list) == 1:
+        example_lines.extend(_describe_failure_example(1, failed_list[0]))
+    else:
+        example_lines.append("No failed questions in `full_schema_repair_on`.")
 
     exec_val = f"**{hl['execution_correct']}/{n_ans} ({_fmt_pct(hl['execution_accuracy'])})**"
     exec_ci = f"`{_fmt_ci(hl['execution_wilson_95_ci'])}`"
@@ -97,6 +268,11 @@ def render_readme(metrics: dict[str, Any]) -> str:
     ref_val = f"**{hl['refusal_correct']}/{n_unans} ({_fmt_pct(hl['refusal_accuracy'])})**"
     ref_ci = f"`{_fmt_ci(hl['refusal_wilson_95_ci'])}`"
     lat_val = f"**{hl['latency_p50_ms']:.2f} ms / {hl['latency_p95_ms']:.2f} ms**"
+    lat_note = (
+        "Deterministic offline replay latency model (mock)"
+        if provider == "mock"
+        else f"Recorded live LLM latency from `{host}` (`{response_model}`)"
+    )
 
     lines: list[str] = [
         "# analytics-copilot",
@@ -107,7 +283,7 @@ def render_readme(metrics: dict[str, Any]) -> str:
         "(Corporación Favorita grocery store sales across 54 stores and 33 product families",
         "in Ecuador).",
         "",
-        *_render_eval_status_block(provider, model, cache_file),
+        *_render_eval_status_block(metrics),
         "",
         "## Problem",
         "",
@@ -189,13 +365,16 @@ def render_readme(metrics: dict[str, Any]) -> str:
         "## Evaluation Results",
         "",
         "All figures below are generated directly from `metrics/metrics.json` produced by",
-        f"`python -m copilot.eval --replay` (using provider `{provider}` / model `{model}`,",
-        f"cached in `{cache_file}`). The gold benchmark (`evals/gold.jsonl`, reviewed in",
-        f"`docs/GOLD_REVIEW.md`) contains **{n_total}** questions: **{n_ans}** answerable",
-        f"questions (10 easy, 20 medium, 10 hard) and **{n_unans}** unanswerable/ambiguous",
-        "questions that require refusal.",
+        f"`python -m copilot.eval --replay` (primary provider `{provider}`, requested model",
+        f"`{model}`, API-returned model `{response_model}`, endpoint host `{host}`,",
+        f"`temperature={metrics.get('temperature', 0.0)}`,",
+        f"`run_date={metrics.get('run_date', '2026-10-26')}`, cached in `{cache_file}`).",
+        "The gold benchmark (`evals/gold.jsonl`, reviewed in `docs/GOLD_REVIEW.md`) contains",
+        f"**{n_total}** questions: **{n_ans}** evaluated answerable questions (10 easy, 20 medium,",
+        f"10 hard) and **{n_unans}** evaluated unanswerable/ambiguous questions that require",
+        "refusal.",
         "",
-        "### Headline Metrics (`full_schema_repair_on`)",
+        f"### Headline Metrics (`full_schema_repair_on` — `{provider}` / `{response_model}`)",
         "",
         "| Metric | Value | 95% Wilson CI | Notes |",
         "| --- | --- | --- | --- |",
@@ -215,16 +394,14 @@ def render_readme(metrics: dict[str, Any]) -> str:
             f"| **Mean Attempts** | **{hl['mean_attempts']:.3f}** | n/a "
             "| Average LLM calls per question (max 3 with up to 2 repairs) |"
         ),
-        (
-            f"| **Latency (p50 / p95)** | {lat_val} | n/a "
-            "| Deterministic offline replay latency model |"
-        ),
+        (f"| **Latency (p50 / p95)** | {lat_val} | n/a | {lat_note} |"),
         (
             f"| **Total Tokens** | **{hl['total_tokens']}** | n/a "
-            "| Sum of prompt and completion tokens across all 45 questions |"
+            "| Sum of prompt and completion tokens across all evaluated questions |"
         ),
         "",
-        "### Configuration & Ablation Comparison",
+        *_render_multi_provider_section(metrics),
+        f"### Configuration & Ablation Comparison (`{provider}` / `{response_model}`)",
         "",
         (
             "| Configuration | Description | Execution Accuracy | 95% Wilson CI "
@@ -234,34 +411,28 @@ def render_readme(metrics: dict[str, Any]) -> str:
         _cfg_row(
             c_on,
             "Full catalog descriptions + repair loop (<= 2 retries)",
-            n_ans,
-            n_unans,
         ),
         _cfg_row(
             c_off,
             "Full catalog descriptions + repair loop disabled (0 retries)",
-            n_ans,
-            n_unans,
         ),
         _cfg_row(
             c_bare,
             "Bare schema (names & types only, no descriptions) + repair on",
-            n_ans,
-            n_unans,
         ),
         "",
-        "*Statistical note on sample size ($N = 40$ answerable, $N = 5$ unanswerable)*: while",
-        f"`full_schema_repair_on` ({_fmt_pct(c_on['execution_accuracy'])}, 95% Wilson CI",
-        f"`{_fmt_ci(c_on['execution_accuracy_wilson_95_ci'])}`) achieves a higher point estimate",
-        f"than `full_schema_repair_off` ({_fmt_pct(c_off['execution_accuracy'])}, CI",
-        f"`{_fmt_ci(c_off['execution_accuracy_wilson_95_ci'])}`) and `bare_schema_repair_on`",
-        f"({_fmt_pct(c_bare['execution_accuracy'])}, CI",
-        f"`{_fmt_ci(c_bare['execution_accuracy_wilson_95_ci'])}`) by recovering 4 binder/guard",
-        "errors and preventing 4 tier-label/grain errors, the 95% Wilson confidence intervals",
-        "overlap at $N = 40$. We therefore report the exact mechanisms recovered by each",
-        "component rather than claiming a statistically significant population difference.",
+        "*Statistical note on sample size ($N = 40$ answerable, $N = 5$ unanswerable)*:",
+        f"`full_schema_repair_on` achieves {_fmt_pct(c_on['execution_accuracy'])} (95% Wilson CI",
+        f"`{_fmt_ci(c_on['execution_accuracy_wilson_95_ci'])}`), compared with",
+        f"`full_schema_repair_off` at {_fmt_pct(c_off['execution_accuracy'])} (CI",
+        f"`{_fmt_ci(c_off['execution_accuracy_wilson_95_ci'])}`) and `bare_schema_repair_on` at",
+        f"{_fmt_pct(c_bare['execution_accuracy'])} (CI",
+        f"`{_fmt_ci(c_bare['execution_accuracy_wilson_95_ci'])}`). Because the 95% Wilson",
+        "confidence intervals overlap at $N = 40$, we report the specific query mechanisms",
+        "recovered by schema descriptions and self-repair rather than claiming a statistically",
+        "significant population difference.",
         "",
-        "### Accuracy by Difficulty Tier (`full_schema_repair_on`)",
+        f"### Accuracy by Difficulty Tier (`full_schema_repair_on` — `{response_model}`)",
         "",
         "| Difficulty Tier | Correct / Total | Accuracy | 95% Wilson CI |",
         "| --- | --- | --- | --- |",
@@ -281,7 +452,7 @@ def render_readme(metrics: dict[str, Any]) -> str:
         "## Failure Analysis",
         "",
         "Failed questions are categorized into seven root-cause buckets across the three",
-        "configurations:",
+        f"configurations for `{provider}` (`{response_model}`):",
         "",
         (
             "| Failure Category | `full_schema_repair_on` | `full_schema_repair_off` "
@@ -307,7 +478,7 @@ def render_readme(metrics: dict[str, Any]) -> str:
             fc_on,
             fc_off,
             fc_bare,
-            "Referencing `zero_sales_pct`, `oil_price`, or `store_id` on attempt 1 (repaired)",
+            "Referencing nonexistent columns/tables on attempt 1 (repaired when repair is on)",
         ),
         _fail_row(
             "syntax_error",
@@ -328,7 +499,7 @@ def render_readme(metrics: dict[str, Any]) -> str:
             fc_on,
             fc_off,
             fc_bare,
-            "Calling `pragma_table_info` on attempt 1 (repaired when repair is enabled)",
+            "Calling blocked catalog/system functions on attempt 1 (repaired when repair is on)",
         ),
         _fail_row(
             "timeout",
@@ -338,27 +509,9 @@ def render_readme(metrics: dict[str, Any]) -> str:
             "Query exceeding the 10.0s execution watchdog",
         ),
         "",
-        "### Concrete Failure Examples (`full_schema_repair_on`)",
+        f"### Concrete Failure Examples (`full_schema_repair_on` — `{response_model}`)",
         "",
-        f"1. **`{ex1['id']}` (`{ex1['category']}`)**: *{ex1['question']}*",
-        f"   - **Generated SQL**: `{ex1['generated_sql']}`",
-        f"   - **Reference SQL**: `{ex1['reference_sql']}`",
-        "   - **Why it failed**: `weekly_transactions` in `weekly_store_family_summary` is a",
-        "     store-level figure repeated on all 33 product-family rows for a given",
-        "     `(store_nbr, week_start_date)`. Summing `weekly_transactions` directly inflates",
-        f"     Store 44's total by 33x (`{ex1['actual_row_preview'][0][2]}` instead of",
-        f"     `{ex1['expected_row_preview'][0][2]}`). Because the query is syntactically valid",
-        "     and passes all security guards, self-repair is not triggered.",
-        "",
-        f"2. **`{ex2['id']}` (`{ex2['category']}`)**: *{ex2['question']}*",
-        f"   - **Generated SQL**: `{ex2['generated_sql']}`",
-        f"   - **Reference SQL**: `{ex2['reference_sql']}`",
-        "   - **Why it failed**: The generated query averages `total_sales` across individual",
-        f"     `(store, family, week)` rows (`{ex2['actual_row_preview'][0][2]}` and",
-        f"     `{ex2['actual_row_preview'][1][2]}`) rather than first aggregating",
-        "     `SUM(total_sales)` by `week_start_date` in a CTE and then averaging chain-wide",
-        f"     weekly totals (`{ex2['expected_row_preview'][0][2]}` and",
-        f"     `{ex2['expected_row_preview'][1][2]}`).",
+        *example_lines,
         "",
         "## Reproducing Results & Running the Service",
         "",
@@ -373,7 +526,7 @@ def render_readme(metrics: dict[str, Any]) -> str:
         "### 2. Offline Replay Evaluation (No API Key Required)",
         "",
         "Reproduce `metrics/metrics.json` and update `README.md` strictly from the committed",
-        "JSONL cache (`evals/cache/mock_mock-sql-v1.jsonl`):",
+        f"JSONL caches (`{cache_file}` and `evals/cache/*.jsonl`):",
         "",
         "```powershell",
         "python -m copilot.eval --replay",
@@ -383,22 +536,16 @@ def render_readme(metrics: dict[str, Any]) -> str:
         "",
         "### 3. Live Provider Evaluation",
         "",
-        "To run against Google Gemini, an OpenAI-compatible endpoint, or a local Ollama server,",
-        "set the provider environment variables (see `.env.example`):",
+        "To run against an OpenAI-compatible endpoint (such as Groq, OpenRouter, or",
+        "`text.pollinations.ai`), Google Gemini, or a local Ollama server, configure `.env`",
+        "or environment variables (see `.env.example` and `docs/RUN_NOTES.md`):",
         "",
         "```powershell",
-        '$env:COPILOT_LLM_PROVIDER = "gemini"',
-        '$env:GEMINI_API_KEY = "<your-key>"',
-        "python -m copilot.eval --provider gemini",
+        '$env:COPILOT_LLM_PROVIDER = "openai_compatible"',
+        '$env:OPENAI_BASE_URL = "https://api.groq.com/openai/v1"',
+        '$env:COPILOT_LLM_MODEL = "openai/gpt-oss-120b"',
+        "python -m copilot.eval --provider openai_compatible",
         "```",
-        "",
-        "*Note on live provider verification during development*: A live probe to the Gemini",
-        "REST API (`gemini-3-flash-preview` / `gemini-3.1-flash-lite-preview`) authenticated",
-        "via `GEMINI_API_KEY` but returned HTTP 402 (`prepayment credits are depleted`), and",
-        "no local Ollama server was running. The committed cache and metrics were therefore",
-        "generated with the deterministic gold-grounded `MockProvider` (`mock-sql-v1`), and",
-        "the evaluation CLI runs against live providers as soon as an active key or local",
-        "Ollama model is supplied.",
         "",
         "### 4. Running the FastAPI Server",
         "",
