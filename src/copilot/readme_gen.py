@@ -41,6 +41,28 @@ def _fail_row(
     return f"| `{cat}` | {fc_on[cat]} | {fc_off[cat]} | {fc_bare[cat]} | {mechanism} |"
 
 
+def _render_eval_status_block(provider: str, model: str, cache_file: str) -> list[str]:
+    """Render the top-level Evaluation status section from `metrics.json` provider fields."""
+    if provider == "mock":
+        return [
+            "## Evaluation status",
+            "",
+            f"- **Active provider in `metrics/metrics.json`**: `{provider}` (model `{model}`,",
+            f"  cached in `{cache_file}`).",
+            "- **Interpretation**: Current metrics come from the deterministic `MockProvider`",
+            "  (**harness validation, not model quality**); latency and token figures are mock",
+            "  values used to verify offline replay, ablation logic, and CI reproducibility.",
+        ]
+    return [
+        "## Evaluation status",
+        "",
+        f"- **Active provider in `metrics/metrics.json`**: `{provider}` (model `{model}`,",
+        f"  cached in `{cache_file}`).",
+        "- **Interpretation**: Current metrics come from recorded real-model evaluation runs",
+        "  replayed deterministically from `evals/cache/*.jsonl`.",
+    ]
+
+
 def render_readme(metrics: dict[str, Any]) -> str:
     """Render the full project README.md using exact figures from `metrics/metrics.json`."""
     hl = metrics["headline"]
@@ -84,6 +106,8 @@ def render_readme(metrics: dict[str, Any]) -> str:
         "[grocery-demand-planner](https://github.com/lazycoder52/grocery-demand-planner) pipeline",
         "(Corporación Favorita grocery store sales across 54 stores and 33 product families",
         "in Ecuador).",
+        "",
+        *_render_eval_status_block(provider, model, cache_file),
         "",
         "## Problem",
         "",
