@@ -118,6 +118,10 @@ def test_replay_regenerates_committed_metrics_json_identically(tmp_path):
     }
     assert set(configs) == expected_cfg_names
     assert set(replayed_data["heldout_evaluation"]["configurations"]) == expected_cfg_names
+    guard = replayed_data["guard_attack_suite"]
+    assert guard["total"] >= 50
+    assert guard["blocked"] == guard["total"]
+    assert guard["block_rate"] == 1.0
 
 
 def test_grain_sanity_check_blocks_sum_over_repeated_grain_and_allows_deduplicated_cte():

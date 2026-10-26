@@ -3087,6 +3087,43 @@
       ]
     }
   },
+  "guard_attack_suite": {
+    "blocked": 56,
+    "total": 56,
+    "block_rate": 1.0,
+    "by_category": {
+      "ddl_and_dml": {
+        "blocked": 9,
+        "total": 9,
+        "block_rate": 1.0
+      },
+      "admin_and_extensions": {
+        "blocked": 5,
+        "total": 5,
+        "block_rate": 1.0
+      },
+      "file_and_function_allowlist": {
+        "blocked": 16,
+        "total": 16,
+        "block_rate": 1.0
+      },
+      "system_catalogs_and_unallowlisted_tables": {
+        "blocked": 14,
+        "total": 14,
+        "block_rate": 1.0
+      },
+      "multi_statement_and_syntax": {
+        "blocked": 5,
+        "total": 5,
+        "block_rate": 1.0
+      },
+      "resource_and_identifier_spoofing": {
+        "blocked": 7,
+        "total": 7,
+        "block_rate": 1.0
+      }
+    }
+  },
   "heldout_evaluation": {
     "heldout_set_path": "evals/heldout.jsonl",
     "review_status": "needs human review",
@@ -5656,6 +5693,43 @@
             }
           ]
         }
+      },
+      "guard_attack_suite": {
+        "blocked": 56,
+        "total": 56,
+        "block_rate": 1.0,
+        "by_category": {
+          "ddl_and_dml": {
+            "blocked": 9,
+            "total": 9,
+            "block_rate": 1.0
+          },
+          "admin_and_extensions": {
+            "blocked": 5,
+            "total": 5,
+            "block_rate": 1.0
+          },
+          "file_and_function_allowlist": {
+            "blocked": 16,
+            "total": 16,
+            "block_rate": 1.0
+          },
+          "system_catalogs_and_unallowlisted_tables": {
+            "blocked": 14,
+            "total": 14,
+            "block_rate": 1.0
+          },
+          "multi_statement_and_syntax": {
+            "blocked": 5,
+            "total": 5,
+            "block_rate": 1.0
+          },
+          "resource_and_identifier_spoofing": {
+            "blocked": 7,
+            "total": 7,
+            "block_rate": 1.0
+          }
+        }
       }
     }
   ],
@@ -6783,6 +6857,43 @@
             "error": null
           }
         ]
+      }
+    },
+    "guard_attack_suite": {
+      "blocked": 56,
+      "total": 56,
+      "block_rate": 1.0,
+      "by_category": {
+        "ddl_and_dml": {
+          "blocked": 9,
+          "total": 9,
+          "block_rate": 1.0
+        },
+        "admin_and_extensions": {
+          "blocked": 5,
+          "total": 5,
+          "block_rate": 1.0
+        },
+        "file_and_function_allowlist": {
+          "blocked": 16,
+          "total": 16,
+          "block_rate": 1.0
+        },
+        "system_catalogs_and_unallowlisted_tables": {
+          "blocked": 14,
+          "total": 14,
+          "block_rate": 1.0
+        },
+        "multi_statement_and_syntax": {
+          "blocked": 5,
+          "total": 5,
+          "block_rate": 1.0
+        },
+        "resource_and_identifier_spoofing": {
+          "blocked": 7,
+          "total": 7,
+          "block_rate": 1.0
+        }
       }
     }
   }
