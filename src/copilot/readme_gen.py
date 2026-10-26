@@ -19,9 +19,14 @@ def _fmt_ci(ci: list[float]) -> str:
 
 
 def _cfg_row(cfg: dict[str, Any], label: str) -> str:
+    name = f"`{cfg['config']}`"
+    n_comp = cfg.get("n_completed", cfg["n_total"])
+    n_tot = cfg["n_total"]
+    if n_comp < n_tot:
+        inc_str = f"incomplete, Groq daily token cap ({n_comp}/{n_tot})"
+        return " | ".join(["|" + f" {name}", label, inc_str, "n/a", "n/a", "n/a", "n/a", "n/a |"])
     n_ans = cfg["n_answerable"]
     n_unans = cfg["n_unanswerable"]
-    name = f"`{cfg['config']}`"
     exec_str = f"{cfg['execution_correct']}/{n_ans} ({_fmt_pct(cfg['execution_accuracy'])})"
     ci_str = f"`{_fmt_ci(cfg['execution_accuracy_wilson_95_ci'])}`"
     val_str = f"{cfg['valid_sql_count']}/{n_ans} ({_fmt_pct(cfg['valid_sql_rate'])})"
@@ -95,17 +100,25 @@ def _render_eval_status_block(metrics: dict[str, Any]) -> list[str]:
         bare_str = ""
         if "bare_schema_repair_on" in sec_cfgs:
             bc = sec_cfgs["bare_schema_repair_on"]
-            bare_str = (
-                f", and **{bc['execution_correct']}/{bc['n_answerable']} "
-                f"({_fmt_pct(bc['execution_accuracy'])})** on `bare_schema_repair_on`"
-            )
+            bc_comp = bc.get("n_completed", bc["n_total"])
+            bc_tot = bc["n_total"]
+            if bc_comp < bc_tot:
+                bare_str = (
+                    f"; `bare_schema_repair_on` is incomplete, Groq daily token cap "
+                    f"({bc_comp}/{bc_tot} completed)"
+                )
+            else:
+                bare_str = (
+                    f", and **{bc['execution_correct']}/{bc['n_answerable']} "
+                    f"({_fmt_pct(bc['execution_accuracy'])})** on `bare_schema_repair_on`"
+                )
         lines.append(
             f"- **Secondary live provider (Run B — `{sec['base_url_host']}`)**: "
             f"`{sec['provider']}` (requested model `{sec['model']}`, API-returned model "
             f"`{sec['response_model']}`, `temperature={sec['temperature']}`, "
             f"`run_date={sec['run_date']}`, cached in `{sec['cache_file']}`) — "
-            f"**{sec['n_completed']}/{sec['n_total']}** completed, execution accuracy "
-            f"**{sec_hl['execution_correct']}/{sec_hl['n_answerable']} "
+            f"**{sec['n_completed']}/{sec['n_total']}** completed on `{sec['primary_config']}`, "
+            f"execution accuracy **{sec_hl['execution_correct']}/{sec_hl['n_answerable']} "
             f"({_fmt_pct(sec_hl['execution_accuracy'])})** on `{sec['primary_config']}`{bare_str}."
         )
     if metrics.get("harness_validation_run") is not None:
@@ -116,8 +129,25 @@ def _render_eval_status_block(metrics: dict[str, Any]) -> list[str]:
             "**harness validation only, not model quality** (latency and token counts are "
             f"synthetic mock values; cached in `{hv['cache_file']}`, "
             f"{hv_hl['execution_correct']}/{hv_hl['n_answerable']} = "
-            f"{_fmt_pct(hv_hl['execution_accuracy'])} on `{hv['primary_config']}`)."
+            f"{_fmt_pct(hv_hl['execution_accuracy'])} on `{hv['primary_config']}`). All "
+            "`mock-sql-v1` grain ablation and held-out figures in `metrics/metrics.json` are "
+            "**harness validation only, not evidence that the grain fixes work**."
         )
+    h_gap = (
+        metrics.get("heldout_evaluation", {})
+        .get("configurations", {})
+        .get("grain_aware_prompt_repair_on", {})
+    )
+    h_gap_str = f"{h_gap.get('n_completed', 0)}/{h_gap.get('n_total', 10)}"
+    lines.append(
+        "- **Grain ablation summary**: The grain fixes did not change live results on gold "
+        "(sanity check 70.0% vs 70.0%, while `catalog_grain_notes_repair_on` 0/45 and "
+        "`grain_aware_prompt_repair_on` 0/45 are incomplete, Groq daily token cap); "
+        "the held-out set was already 100% before any change (`full_schema_repair_on` 10/10 = "
+        "100.0%, `catalog_grain_notes_repair_on` 10/10 = 100.0%, `grain_sanity_check_repair_on` "
+        f"10/10 = 100.0%, while `grain_aware_prompt_repair_on` {h_gap_str} is incomplete, Groq "
+        "daily token cap), so it cannot show improvement; **no improvement is claimed**."
+    )
     lines.append(
         "- **Gateway & rate-limit note**: Anonymous free gateways (`text.pollinations.ai/openai` "
         "and `api.llm7.io/v1` with alias `openai-fast`) were probed; `api.llm7.io` returned "
@@ -204,12 +234,23 @@ def _render_multi_provider_section(metrics: dict[str, Any]) -> list[str]:
             if cfg_name not in sec_cfgs:
                 continue
             sc = sec_cfgs[cfg_name]
+            sc_comp = sc.get("n_completed", sc["n_total"])
+            sc_tot = sc["n_total"]
+            if sc_comp < sc_tot:
+                rows.append(
+                    f"| **Live Run B** | `{sec['provider']}` | `{sec['model']}` "
+                    f"| `{sec['response_model']}` | `{sec['base_url_host']}` | `{cfg_name}` "
+                    f"| {sc_comp}/{sc_tot} "
+                    f"| incomplete, Groq daily token cap ({sc_comp}/{sc_tot}) "
+                    "| n/a | n/a | n/a | n/a | n/a |"
+                )
+                continue
             sa = sc["n_answerable"]
             su = sc["n_unanswerable"]
             rows.append(
                 f"| **Live Run B** | `{sec['provider']}` | `{sec['model']}` "
                 f"| `{sec['response_model']}` | `{sec['base_url_host']}` | `{cfg_name}` "
-                f"| {sc['n_completed']}/{sc['n_total']} "
+                f"| {sc_comp}/{sc_tot} "
                 f"| {sc['execution_correct']}/{sa} ({_fmt_pct(sc['execution_accuracy'])}) "
                 f"| `{_fmt_ci(sc['execution_accuracy_wilson_95_ci'])}` "
                 f"| {sc['valid_sql_count']}/{sa} ({_fmt_pct(sc['valid_sql_rate'])}) "
@@ -352,6 +393,15 @@ def _render_heldout_section(metrics: dict[str, Any]) -> list[str]:
         "| --- | --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
     for cfg_name, cfg in h_cfgs.items():
+        n_comp = cfg.get("n_completed", cfg["n_total"])
+        n_tot = cfg["n_total"]
+        if n_comp < n_tot:
+            lines.append(
+                f"| `{cfg_name}` | {cfg['description']} "
+                f"| incomplete, Groq daily token cap ({n_comp}/{n_tot}) "
+                "| n/a | n/a | n/a | n/a | n/a | n/a |"
+            )
+            continue
         n_ans = cfg["n_answerable"]
         d_med = cfg["by_difficulty"]["medium"]
         d_hard = cfg["by_difficulty"]["hard"]
@@ -364,6 +414,16 @@ def _render_heldout_section(metrics: dict[str, Any]) -> list[str]:
             f"| {cfg['valid_sql_count']}/{n_ans} ({_fmt_pct(cfg['valid_sql_rate'])}) "
             f"| {cfg['mean_attempts']:.3f} | {cfg['total_tokens']} |"
         )
+    lines.extend(
+        [
+            "",
+            "*Plain statement on grain fixes and held-out results*: The grain fixes did not change "
+            "live results on gold (sanity check 70.0% vs 70.0%); the held-out set was already 100% "
+            "before any change, so it cannot show improvement; no improvement is claimed. All "
+            "`mock-sql-v1` grain results in `metrics/metrics.json` are **harness validation only, "
+            "not evidence that the grain fixes work**.",
+        ]
+    )
     return lines
 
 
@@ -570,10 +630,14 @@ def render_readme(metrics: dict[str, Any]) -> str:
             if k in configs
         ),
         "",
-        "*Note on benchmark exposure*: The 45-question gold set (`evals/gold.jsonl`) was seen",
-        "while inspecting failure modes and tuning grain rules, whereas the 10-question held-out",
-        "set (`evals/heldout.jsonl`) was authored prior to any prompt/catalog changes and was",
-        "not seen during tuning.",
+        "*Note on benchmark exposure and grain fixes*: The 45-question gold set",
+        "(`evals/gold.jsonl`) was seen while inspecting failure modes and tuning grain rules,",
+        "whereas the 10-question held-out set (`evals/heldout.jsonl`) was authored prior to any",
+        "prompt/catalog changes and was not seen during tuning. **The grain fixes did not change",
+        "live results on gold (sanity check 70.0% vs 70.0%); the held-out set was already 100%",
+        "before any change, so it cannot show improvement; no improvement is claimed.** All",
+        "`mock-sql-v1` grain results in `metrics/metrics.json` are **harness validation only, not",
+        "evidence that the grain fixes work**.",
         "",
         "*Note on `full_schema_repair_on` vs. `full_schema_repair_off` and sample size",
         f"($N = 40$ answerable, $N = 5$ unanswerable)*: In Run A (`{response_model}`),",

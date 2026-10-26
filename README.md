@@ -13,8 +13,9 @@ in Ecuador).
 - **Interpretation**: Primary headline and ablation metrics come from recorded
   live LLM calls against `api.groq.com` (`openai/gpt-oss-120b`) replayed
   deterministically from `evals/cache/openai_compatible_openai_gpt-oss-120b.jsonl`.
-- **Secondary live provider (Run B — `api.groq.com`)**: `openai_compatible` (requested model `openai/gpt-oss-20b`, API-returned model `openai/gpt-oss-20b`, `temperature=0.0`, `run_date=2026-10-26`, cached in `evals/cache/openai_compatible_openai_gpt-oss-20b.jsonl`) — **45/45** completed, execution accuracy **30/40 (75.0%)** on `full_schema_repair_on`, and **29/40 (72.5%)** on `bare_schema_repair_on`.
-- **Harness validation baseline (`MockProvider` / `mock-sql-v1`)**: **harness validation only, not model quality** (latency and token counts are synthetic mock values; cached in `evals/cache/mock_mock-sql-v1.jsonl`, 37/40 = 92.5% on `full_schema_repair_on`).
+- **Secondary live provider (Run B — `api.groq.com`)**: `openai_compatible` (requested model `openai/gpt-oss-20b`, API-returned model `openai/gpt-oss-20b`, `temperature=0.0`, `run_date=2026-10-26`, cached in `evals/cache/openai_compatible_openai_gpt-oss-20b.jsonl`) — **45/45** completed on `full_schema_repair_on`, execution accuracy **30/40 (75.0%)** on `full_schema_repair_on`; `bare_schema_repair_on` is incomplete, Groq daily token cap (42/45 completed).
+- **Harness validation baseline (`MockProvider` / `mock-sql-v1`)**: **harness validation only, not model quality** (latency and token counts are synthetic mock values; cached in `evals/cache/mock_mock-sql-v1.jsonl`, 37/40 = 92.5% on `full_schema_repair_on`). All `mock-sql-v1` grain ablation and held-out figures in `metrics/metrics.json` are **harness validation only, not evidence that the grain fixes work**.
+- **Grain ablation summary**: The grain fixes did not change live results on gold (sanity check 70.0% vs 70.0%, while `catalog_grain_notes_repair_on` 0/45 and `grain_aware_prompt_repair_on` 0/45 are incomplete, Groq daily token cap); the held-out set was already 100% before any change (`full_schema_repair_on` 10/10 = 100.0%, `catalog_grain_notes_repair_on` 10/10 = 100.0%, `grain_sanity_check_repair_on` 10/10 = 100.0%, while `grain_aware_prompt_repair_on` 0/10 is incomplete, Groq daily token cap), so it cannot show improvement; **no improvement is claimed**.
 - **Gateway & rate-limit note**: Anonymous free gateways (`text.pollinations.ai/openai` and `api.llm7.io/v1` with alias `openai-fast`) were probed; `api.llm7.io` returned `HTTP 400 model_unavailable` and `text.pollinations.ai` enforced a 1 req/30s IP cap (attempted and abandoned after 31/45 questions in favor of `openai/gpt-oss-20b` on `api.groq.com`). Gateway aliases like `openai-fast` may change upstream routing over time.
 
 ## Problem
@@ -120,7 +121,7 @@ refusal.
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | **Live Run A (Headline)** | `openai_compatible` | `openai/gpt-oss-120b` | `openai/gpt-oss-120b` | `api.groq.com` | `full_schema_repair_on` | 45/45 | 28/40 (70.0%) | `[54.6%, 81.9%]` | 40/40 (100.0%) | 5/5 (100.0%) | 1199.52 / 2518.98 ms | 149266 |
 | **Live Run B** | `openai_compatible` | `openai/gpt-oss-20b` | `openai/gpt-oss-20b` | `api.groq.com` | `full_schema_repair_on` | 45/45 | 30/40 (75.0%) | `[59.8%, 85.8%]` | 40/40 (100.0%) | 5/5 (100.0%) | 1482.02 / 2440.30 ms | 154052 |
-| **Live Run B** | `openai_compatible` | `openai/gpt-oss-20b` | `openai/gpt-oss-20b` | `api.groq.com` | `bare_schema_repair_on` | 42/45 | 29/40 (72.5%) | `[57.2%, 83.9%]` | 40/40 (100.0%) | 2/2 (100.0%) | 1368.86 / 2747.96 ms | 70814 |
+| **Live Run B** | `openai_compatible` | `openai/gpt-oss-20b` | `openai/gpt-oss-20b` | `api.groq.com` | `bare_schema_repair_on` | 42/45 | incomplete, Groq daily token cap (42/45) | n/a | n/a | n/a | n/a | n/a |
 | **Harness Validation (Mock)** | `mock` | `mock-sql-v1` | `mock-sql-v1` | `local-mock` | `full_schema_repair_on` | 45/45 | 37/40 (92.5%) | `[80.1%, 97.4%]` | 40/40 (100.0%) | 5/5 (100.0%) | 14.50 / 19.00 ms (mock) | 155128 (mock) |
 
 ### Configuration & Ablation Comparison (`openai_compatible` / `openai/gpt-oss-120b`)
@@ -130,14 +131,18 @@ refusal.
 | `full_schema_repair_on` | Full catalog descriptions + repair loop (<= 2 retries) | 28/40 (70.0%) | `[54.6%, 81.9%]` | 40/40 (100.0%) | 5/5 (100.0%) | 1.000 | 149266 |
 | `full_schema_repair_off` | Full catalog descriptions + repair loop disabled (0 retries) | 28/40 (70.0%) | `[54.6%, 81.9%]` | 40/40 (100.0%) | 5/5 (100.0%) | 1.000 | 149266 |
 | `bare_schema_repair_on` | Bare schema (names & types only, no descriptions) + repair on | 26/40 (65.0%) | `[49.5%, 77.9%]` | 40/40 (100.0%) | 5/5 (100.0%) | 1.022 | 73368 |
-| `catalog_grain_notes_repair_on` | Full schema + explicit table grain/fan-out notes in catalog.py + repair on | 0/0 (0.0%) | `[0.0%, 0.0%]` | 0/0 (0.0%) | 0/0 (0.0%) | 0.000 | None |
-| `grain_aware_prompt_repair_on` | Full schema + catalog grain notes + grain-aware prompt checklist + repair on | 0/0 (0.0%) | `[0.0%, 0.0%]` | 0/0 (0.0%) | 0/0 (0.0%) | 0.000 | None |
+| `catalog_grain_notes_repair_on` | Full schema + explicit table grain/fan-out notes in catalog.py + repair on | incomplete, Groq daily token cap (0/45) | n/a | n/a | n/a | n/a | n/a |
+| `grain_aware_prompt_repair_on` | Full schema + catalog grain notes + grain-aware prompt checklist + repair on | incomplete, Groq daily token cap (0/45) | n/a | n/a | n/a | n/a | n/a |
 | `grain_sanity_check_repair_on` | Full schema + SUM-over-repeated-grain AST sanity check repair trigger | 28/40 (70.0%) | `[54.6%, 81.9%]` | 40/40 (100.0%) | 5/5 (100.0%) | 1.000 | 149266 |
 
-*Note on benchmark exposure*: The 45-question gold set (`evals/gold.jsonl`) was seen
-while inspecting failure modes and tuning grain rules, whereas the 10-question held-out
-set (`evals/heldout.jsonl`) was authored prior to any prompt/catalog changes and was
-not seen during tuning.
+*Note on benchmark exposure and grain fixes*: The 45-question gold set
+(`evals/gold.jsonl`) was seen while inspecting failure modes and tuning grain rules,
+whereas the 10-question held-out set (`evals/heldout.jsonl`) was authored prior to any
+prompt/catalog changes and was not seen during tuning. **The grain fixes did not change
+live results on gold (sanity check 70.0% vs 70.0%); the held-out set was already 100%
+before any change, so it cannot show improvement; no improvement is claimed.** All
+`mock-sql-v1` grain results in `metrics/metrics.json` are **harness validation only, not
+evidence that the grain fixes work**.
 
 *Note on `full_schema_repair_on` vs. `full_schema_repair_off` and sample size
 ($N = 40$ answerable, $N = 5$ unanswerable)*: In Run A (`openai/gpt-oss-120b`),
@@ -172,8 +177,10 @@ The 10-question held-out benchmark (`evals/heldout.jsonl`: 4 `medium`, 6 `hard`,
 | `full_schema_repair_off` | Schema with table/column descriptions + repair loop disabled (0 repairs) | 10/10 (100.0%) | `[72.2%, 100.0%]` | 4/4 (100.0%) | 6/6 (100.0%) | 10/10 (100.0%) | 1.000 | 35824 |
 | `bare_schema_repair_on` | Bare schema (table/column names and types only, no descriptions) + repair on | 7/10 (70.0%) | `[39.7%, 89.2%]` | 3/4 (75.0%) | 4/6 (66.7%) | 10/10 (100.0%) | 1.000 | 18808 |
 | `catalog_grain_notes_repair_on` | Full schema + explicit table grain/fan-out notes in catalog.py + repair on | 10/10 (100.0%) | `[72.2%, 100.0%]` | 4/4 (100.0%) | 6/6 (100.0%) | 10/10 (100.0%) | 1.000 | 40594 |
-| `grain_aware_prompt_repair_on` | Full schema + catalog grain notes + grain-aware prompt checklist + repair on | 0/0 (0.0%) | `[0.0%, 0.0%]` | 0/0 (0.0%) | 0/0 (0.0%) | 0/0 (0.0%) | 0.000 | None |
+| `grain_aware_prompt_repair_on` | Full schema + catalog grain notes + grain-aware prompt checklist + repair on | incomplete, Groq daily token cap (0/10) | n/a | n/a | n/a | n/a | n/a | n/a |
 | `grain_sanity_check_repair_on` | Full schema + SUM-over-repeated-grain AST sanity check repair trigger | 10/10 (100.0%) | `[72.2%, 100.0%]` | 4/4 (100.0%) | 6/6 (100.0%) | 10/10 (100.0%) | 1.000 | 35824 |
+
+*Plain statement on grain fixes and held-out results*: The grain fixes did not change live results on gold (sanity check 70.0% vs 70.0%); the held-out set was already 100% before any change, so it cannot show improvement; no improvement is claimed. All `mock-sql-v1` grain results in `metrics/metrics.json` are **harness validation only, not evidence that the grain fixes work**.
 
 ### Guard Attack-Suite Results (**56/56** blocked — **100.0%**)
 
