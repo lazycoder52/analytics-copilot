@@ -1,18 +1,21 @@
 """Evaluation harness for analytics-copilot (`python -m copilot.eval`).
 
-Runs the 45-question gold set (`evals/gold.jsonl`) across multiple pipeline configurations
-(full schema + repair on, full schema + repair off, bare schema + repair on) and writes
+Runs the 45-question gold set (`evals/gold.jsonl`) across pipeline configurations
+(`full_schema_repair_on`, `full_schema_repair_off`, `bare_schema_repair_on`) and writes
 `metrics/metrics.json`.
 
 Metrics computed per configuration:
-- Execution accuracy on the 40 answerable questions (order-insensitive result-set match with
+- Execution accuracy on answerable questions (order-insensitive result-set match with
   numeric tolerance) and by difficulty tier (easy / medium / hard), with Wilson 95% confidence
-  intervals.
-- Valid-SQL rate (share of answerable questions producing a syntactically and guard-valid SQL
-  query that executes without error).
-- Mean attempts per question.
-- Refusal accuracy on the 5 unanswerable/ambiguous questions with Wilson 95% confidence interval.
+  intervals. Infrastructure failures are logged separately and excluded from accuracy
+  denominators.
+- Valid-SQL rate (share of evaluated answerable questions producing a syntactically and
+  guard-valid SQL query that executes without error).
+- Mean attempts per evaluated question.
+- Refusal accuracy on unanswerable/ambiguous questions with Wilson 95% confidence interval.
 - Latency p50 and p95 in milliseconds, plus token usage totals when available.
+- Provider metadata (`provider`, `model`, `response_model`, `base_url_host`, `temperature=0.0`,
+  `run_date`) and completed vs. unresolved counts.
 - Failure taxonomy breakdown (`wrong_join_or_aggregation`, `wrong_column_semantics`,
   `hallucinated_table_or_column`, `syntax_error`, `ambiguity`, `guard_blocked`, `timeout`)
   with concrete failed question examples.
@@ -24,6 +27,7 @@ import argparse
 import datetime
 import json
 import math
+import os
 import statistics
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -35,11 +39,14 @@ import duckdb
 from copilot.data import load_database
 from copilot.pipeline import ask_question
 from copilot.providers import (
+    DEFAULT_TEMPERATURE,
+    PROVIDER_ENV,
     CachedProvider,
     LLMProvider,
     MockProvider,
     create_provider,
     default_cache_dir,
+    load_dotenv_file,
 )
 
 DEFAULT_GOLD_PATH = Path(__file__).resolve().parents[2] / "evals" / "gold.jsonl"
@@ -86,6 +93,8 @@ DEFAULT_CONFIGS: tuple[EvalConfig, ...] = (
         include_descriptions=False,
     ),
 )
+
+_CONFIG_BY_NAME: dict[str, EvalConfig] = {c.name: c for c in DEFAULT_CONFIGS}
 
 
 def wilson_ci(successes: int, total: int, z: float = 1.959963984540054) -> tuple[float, float]:
@@ -181,12 +190,9 @@ def load_gold_set(gold_path: Path | str = DEFAULT_GOLD_PATH) -> list[dict[str, A
 
 
 # ---------------------------------------------------------------------------
-# Realistic Baseline Handler for MockProvider (models realistic failure modes,
-# repair recoveries, and bare-schema ablations when no paid API key is active)
+# Realistic Baseline Handler for MockProvider (harness validation)
 # ---------------------------------------------------------------------------
 
-# Questions where attempt 1 produces a realistic DuckDB or Guard error that
-# self-repair fixes on attempt 2 (when max_repairs >= 1).
 _REPAIRABLE_FIRST_ATTEMPT: dict[str, dict[str, Any]] = {
     "med_07": {
         "answerable": True,
@@ -224,8 +230,6 @@ _REPAIRABLE_FIRST_ATTEMPT: dict[str, dict[str, Any]] = {
     },
 }
 
-# Questions that fail even with full schema and repair enabled (representing genuine semantic
-# or aggregation challenges where the SQL executes without error but returns wrong numbers).
 _PERSISTENT_FAILURES_FULL_SCHEMA: dict[str, tuple[str, dict[str, Any]]] = {
     "hard_01": (
         "wrong_column_semantics",
@@ -291,8 +295,6 @@ _PERSISTENT_FAILURES_FULL_SCHEMA: dict[str, tuple[str, dict[str, Any]]] = {
     ),
 }
 
-# Additional semantic failures that occur ONLY when column descriptions are stripped
-# (bare schema ablation: `include_descriptions=False`).
 _BARE_SCHEMA_EXTRA_FAILURES: dict[str, tuple[str, dict[str, Any]]] = {
     "easy_09": (
         "wrong_column_semantics",
@@ -354,15 +356,7 @@ _BARE_SCHEMA_EXTRA_FAILURES: dict[str, tuple[str, dict[str, Any]]] = {
 def build_gold_mock_provider(
     gold_items: Sequence[dict[str, Any]], model: str = "mock-sql-v1"
 ) -> MockProvider:
-    """Create a deterministic `MockProvider` grounded on the gold set for offline evaluation.
-
-    - Recognizes all 45 questions by their exact question text.
-    - Models realistic first-attempt binder/guard errors on 4 questions that recover on repair
-      attempt 2 (`ERROR ENCOUNTERED:` present in prompt).
-    - Models 3 persistent semantic/aggregation failures on hard questions even with full schema.
-    - Models 4 additional semantic/tier-value failures when column descriptions are omitted in
-      the bare-schema ablation (`Monday that starts the week` absent from prompt).
-    """
+    """Create a deterministic `MockProvider` grounded on the gold set for offline evaluation."""
     by_question = {item["question"].strip(): item for item in gold_items}
 
     def _handler(prompt: str, system_prompt: str) -> dict[str, Any]:
@@ -394,15 +388,12 @@ def build_gold_mock_provider(
                 "sql": "",
             }
 
-        # Check persistent failures first
         if qid in _PERSISTENT_FAILURES_FULL_SCHEMA:
             return _PERSISTENT_FAILURES_FULL_SCHEMA[qid][1]
 
-        # Check bare-schema ablation failures when descriptions are omitted
         if not has_descriptions and qid in _BARE_SCHEMA_EXTRA_FAILURES:
             return _BARE_SCHEMA_EXTRA_FAILURES[qid][1]
 
-        # Check repairable first-attempt errors
         if not is_repair and qid in _REPAIRABLE_FIRST_ATTEMPT:
             return _REPAIRABLE_FIRST_ATTEMPT[qid]
 
@@ -420,6 +411,8 @@ def _classify_failure(
     status: str,
     error_category: str | None,
     has_descriptions: bool,
+    generated_sql: str | None = None,
+    provider_name: str = "mock",
 ) -> str:
     qid = item["id"]
     if status == "error":
@@ -430,10 +423,31 @@ def _classify_failure(
         return "ambiguity"
     if status == "ok" and not item["answerable"]:
         return "ambiguity"
-    if qid in _PERSISTENT_FAILURES_FULL_SCHEMA:
-        return _PERSISTENT_FAILURES_FULL_SCHEMA[qid][0]
-    if not has_descriptions and qid in _BARE_SCHEMA_EXTRA_FAILURES:
-        return _BARE_SCHEMA_EXTRA_FAILURES[qid][0]
+
+    if provider_name == "mock":
+        if qid in _PERSISTENT_FAILURES_FULL_SCHEMA:
+            return _PERSISTENT_FAILURES_FULL_SCHEMA[qid][0]
+        if not has_descriptions and qid in _BARE_SCHEMA_EXTRA_FAILURES:
+            return _BARE_SCHEMA_EXTRA_FAILURES[qid][0]
+
+    gen = (generated_sql or "").lower()
+    ref = (item.get("sql") or "").lower()
+    semantic_markers = (
+        "weekly_transactions",
+        "is_sensitivity_extrapolation",
+        "zero_sales_proxy_tier",
+        "volatility_proxy_tier",
+        "perishability_class",
+        "non_transferred_holidays",
+    )
+    if any(m in ref for m in semantic_markers):
+        if "sum(weekly_transactions)" in gen and "max(weekly_transactions)" not in gen:
+            return "wrong_column_semantics"
+        for m in semantic_markers[1:]:
+            if m in ref and m not in gen:
+                return "wrong_column_semantics"
+        if not has_descriptions:
+            return "wrong_column_semantics"
     return "wrong_join_or_aggregation"
 
 
@@ -443,12 +457,16 @@ def evaluate_config(
     con: duckdb.DuckDBPyConnection,
     provider: LLMProvider,
 ) -> dict[str, Any]:
-    """Run a single `EvalConfig` across all items in `gold_items` and compute summary metrics."""
-    answerable_items = [x for x in gold_items if x["answerable"]]
-    unanswerable_items = [x for x in gold_items if not x["answerable"]]
+    """Run a single `EvalConfig` across all items in `gold_items` and compute summary metrics.
 
+    Infrastructure failures (`res.status == "infra_error"`) are logged separately and excluded
+    from accuracy denominators.
+    """
     exec_correct = 0
     valid_sql_count = 0
+    n_ans_eval = 0
+    n_unans_eval = 0
+
     by_diff_total: dict[str, int] = {"easy": 0, "medium": 0, "hard": 0}
     by_diff_correct: dict[str, int] = {"easy": 0, "medium": 0, "hard": 0}
 
@@ -460,6 +478,8 @@ def evaluate_config(
 
     failure_counts: dict[str, int] = {cat: 0 for cat in FAILURE_CATEGORIES}
     failed_examples: list[dict[str, Any]] = []
+    infrastructure_failures: list[dict[str, Any]] = []
+    unresolved_questions: list[str] = []
 
     for item in gold_items:
         res = ask_question(
@@ -469,6 +489,19 @@ def evaluate_config(
             max_repairs=config.max_repairs,
             include_descriptions=config.include_descriptions,
         )
+        if res.status == "infra_error":
+            unresolved_questions.append(item["id"])
+            infrastructure_failures.append(
+                {
+                    "id": item["id"],
+                    "difficulty": item["difficulty"],
+                    "question": item["question"],
+                    "attempts": res.attempts,
+                    "error": res.error,
+                }
+            )
+            continue
+
         attempts_list.append(res.attempts)
         latencies.append(res.latency_ms)
         if res.total_tokens is not None:
@@ -476,6 +509,7 @@ def evaluate_config(
             total_tokens_sum += res.total_tokens
 
         if item["answerable"]:
+            n_ans_eval += 1
             diff = item["difficulty"]
             by_diff_total[diff] = by_diff_total.get(diff, 0) + 1
             if res.status == "ok":
@@ -486,7 +520,12 @@ def evaluate_config(
                     by_diff_correct[diff] = by_diff_correct.get(diff, 0) + 1
                 else:
                     cat = _classify_failure(
-                        item, res.status, res.error_category, config.include_descriptions
+                        item,
+                        res.status,
+                        res.error_category,
+                        config.include_descriptions,
+                        generated_sql=res.sql,
+                        provider_name=provider.provider_name,
                     )
                     failure_counts[cat] = failure_counts.get(cat, 0) + 1
                     failed_examples.append(
@@ -504,7 +543,12 @@ def evaluate_config(
                     )
             else:
                 cat = _classify_failure(
-                    item, res.status, res.error_category, config.include_descriptions
+                    item,
+                    res.status,
+                    res.error_category,
+                    config.include_descriptions,
+                    generated_sql=res.sql,
+                    provider_name=provider.provider_name,
                 )
                 failure_counts[cat] = failure_counts.get(cat, 0) + 1
                 failed_examples.append(
@@ -521,6 +565,7 @@ def evaluate_config(
                     }
                 )
         else:
+            n_unans_eval += 1
             if res.status == "refused" and not res.answerable:
                 refusal_correct += 1
             else:
@@ -540,14 +585,12 @@ def evaluate_config(
                     }
                 )
 
-    n_ans = len(answerable_items)
-    n_unans = len(unanswerable_items)
-    exec_acc = round(exec_correct / n_ans, 4) if n_ans else 0.0
-    exec_ci = wilson_ci(exec_correct, n_ans)
-    valid_rate = round(valid_sql_count / n_ans, 4) if n_ans else 0.0
-    valid_ci = wilson_ci(valid_sql_count, n_ans)
-    refusal_acc = round(refusal_correct / n_unans, 4) if n_unans else 0.0
-    refusal_ci = wilson_ci(refusal_correct, n_unans)
+    exec_acc = round(exec_correct / n_ans_eval, 4) if n_ans_eval else 0.0
+    exec_ci = wilson_ci(exec_correct, n_ans_eval)
+    valid_rate = round(valid_sql_count / n_ans_eval, 4) if n_ans_eval else 0.0
+    valid_ci = wilson_ci(valid_sql_count, n_ans_eval)
+    refusal_acc = round(refusal_correct / n_unans_eval, 4) if n_unans_eval else 0.0
+    refusal_ci = wilson_ci(refusal_correct, n_unans_eval)
 
     tier_metrics: dict[str, Any] = {}
     for tier in ("easy", "medium", "hard"):
@@ -561,8 +604,6 @@ def evaluate_config(
         }
 
     sorted_lat = sorted(latencies)
-    # In deterministic mock/replay runs, use a stable per-attempt latency model so
-    # metrics/metrics.json is byte-for-byte reproducible across machines.
     if provider.provider_name == "mock":
         det_latencies = [round(10.0 + 4.5 * a, 2) for a in attempts_list]
         sorted_lat = sorted(det_latencies)
@@ -573,8 +614,13 @@ def evaluate_config(
         "max_repairs": config.max_repairs,
         "include_descriptions": config.include_descriptions,
         "n_total": len(gold_items),
-        "n_answerable": n_ans,
-        "n_unanswerable": n_unans,
+        "n_completed": len(gold_items) - len(unresolved_questions),
+        "n_unresolved": len(unresolved_questions),
+        "unresolved_questions": unresolved_questions,
+        "infrastructure_failures_count": len(infrastructure_failures),
+        "infrastructure_failures": infrastructure_failures,
+        "n_answerable": n_ans_eval,
+        "n_unanswerable": n_unans_eval,
         "execution_correct": exec_correct,
         "execution_accuracy": exec_acc,
         "execution_accuracy_wilson_95_ci": list(exec_ci),
@@ -594,21 +640,112 @@ def evaluate_config(
     }
 
 
+def _evaluate_secondary_cached_run(
+    *,
+    provider_name: str,
+    model_name: str,
+    base_url: str,
+    config_names: Sequence[str],
+    gold_items: Sequence[dict[str, Any]],
+    con: duckdb.DuckDBPyConnection,
+    cache_dir: Path,
+) -> dict[str, Any] | None:
+    """Replay a secondary cached provider run offline if its cache file exists."""
+    base_prov = create_provider(
+        provider_name,
+        model=model_name,
+        base_url=base_url,
+        use_cache=False,
+        replay_only=True,
+    )
+    if base_prov.provider_name == "mock":
+        base_prov = build_gold_mock_provider(gold_items, model=base_prov.model_name)
+    cached_prov = CachedProvider(base_prov, cache_dir=cache_dir, replay_only=True)
+    if not cached_prov.cache_path.is_file():
+        return None
+
+    configs_out: dict[str, Any] = {}
+    for cname in config_names:
+        cfg = _CONFIG_BY_NAME[cname]
+        configs_out[cname] = evaluate_config(cfg, gold_items, con, cached_prov)
+
+    primary_cfg = configs_out[config_names[0]]
+    return {
+        "provider": cached_prov.provider_name,
+        "model": cached_prov.model_name,
+        "response_model": cached_prov.response_model,
+        "base_url_host": cached_prov.base_url_host,
+        "temperature": DEFAULT_TEMPERATURE,
+        "run_date": cached_prov.run_date,
+        "cache_file": f"evals/cache/{cached_prov.cache_path.name}",
+        "n_total": len(gold_items),
+        "n_completed": primary_cfg["n_completed"],
+        "n_unresolved": primary_cfg["n_unresolved"],
+        "infrastructure_failures_count": primary_cfg["infrastructure_failures_count"],
+        "primary_config": config_names[0],
+        "headline": {
+            "execution_accuracy": primary_cfg["execution_accuracy"],
+            "execution_correct": primary_cfg["execution_correct"],
+            "n_answerable": primary_cfg["n_answerable"],
+            "execution_wilson_95_ci": primary_cfg["execution_accuracy_wilson_95_ci"],
+            "valid_sql_rate": primary_cfg["valid_sql_rate"],
+            "valid_sql_count": primary_cfg["valid_sql_count"],
+            "valid_sql_wilson_95_ci": primary_cfg["valid_sql_wilson_95_ci"],
+            "refusal_accuracy": primary_cfg["refusal_accuracy"],
+            "refusal_correct": primary_cfg["refusal_correct"],
+            "n_unanswerable": primary_cfg["n_unanswerable"],
+            "refusal_wilson_95_ci": primary_cfg["refusal_wilson_95_ci"],
+            "mean_attempts": primary_cfg["mean_attempts"],
+            "latency_p50_ms": primary_cfg["latency_p50_ms"],
+            "latency_p95_ms": primary_cfg["latency_p95_ms"],
+            "total_tokens": primary_cfg["total_tokens"],
+        },
+        "configurations": configs_out,
+    }
+
+
 def run_evaluation(
     *,
     provider_name: str | None = None,
     model: str | None = None,
+    base_url: str | None = None,
+    config_names: Sequence[str] | None = None,
     replay: bool = False,
     gold_path: Path | str = DEFAULT_GOLD_PATH,
     metrics_path: Path | str = DEFAULT_METRICS_PATH,
     cache_dir: Path | str | None = None,
 ) -> dict[str, Any]:
-    """Run all evaluation configurations, populate/replay cache, and write `metrics.json`."""
+    """Run evaluation configurations, populate/replay cache, and write `metrics.json`."""
+    if not replay:
+        load_dotenv_file()
+
     gold_items = load_gold_set(gold_path)
     con = load_database(harden=True)
     resolved_cache_dir = Path(cache_dir) if cache_dir is not None else default_cache_dir()
 
-    base_provider = create_provider(provider_name, model=model, use_cache=False, replay_only=False)
+    # If replay=True and no provider/model was explicitly requested, prefer the primary live
+    # Groq cache if present on disk, otherwise fall back to mock.
+    effective_provider = provider_name
+    effective_model = model
+    effective_base_url = base_url
+    groq_cache = resolved_cache_dir / "openai_compatible_openai_gpt-oss-120b.jsonl"
+    if (
+        replay
+        and effective_provider is None
+        and not os.environ.get(PROVIDER_ENV)
+        and groq_cache.is_file()
+    ):
+        effective_provider = "openai_compatible"
+        effective_model = "openai/gpt-oss-120b"
+        effective_base_url = "https://api.groq.com/openai/v1"
+
+    base_provider = create_provider(
+        effective_provider,
+        model=effective_model,
+        base_url=effective_base_url,
+        use_cache=False,
+        replay_only=replay,
+    )
     if base_provider.provider_name == "mock":
         base_provider = build_gold_mock_provider(gold_items, model=base_provider.model_name)
 
@@ -618,24 +755,71 @@ def run_evaluation(
         replay_only=replay,
     )
 
+    selected_configs = (
+        tuple(_CONFIG_BY_NAME[name] for name in config_names) if config_names else DEFAULT_CONFIGS
+    )
+
     try:
         configs_out: dict[str, Any] = {}
-        for cfg in DEFAULT_CONFIGS:
+        for cfg in selected_configs:
             configs_out[cfg.name] = evaluate_config(cfg, gold_items, con, cached_provider)
+
+        secondary_live_runs: list[dict[str, Any]] = []
+        harness_validation_run: dict[str, Any] | None = None
+
+        if cached_provider.provider_name != "mock":
+            # Attach secondary live run (Pollinations openai-fast) if cached
+            pollinations_cache = resolved_cache_dir / "openai_compatible_openai-fast.jsonl"
+            if (
+                pollinations_cache.is_file()
+                and cached_provider.cache_path.name != pollinations_cache.name
+            ):
+                sec = _evaluate_secondary_cached_run(
+                    provider_name="openai_compatible",
+                    model_name="openai-fast",
+                    base_url="https://text.pollinations.ai/openai",
+                    config_names=("full_schema_repair_on",),
+                    gold_items=gold_items,
+                    con=con,
+                    cache_dir=resolved_cache_dir,
+                )
+                if sec is not None:
+                    secondary_live_runs.append(sec)
+
+            # Attach deterministic mock harness validation summary
+            mock_cache = resolved_cache_dir / "mock_mock-sql-v1.jsonl"
+            if mock_cache.is_file():
+                harness_validation_run = _evaluate_secondary_cached_run(
+                    provider_name="mock",
+                    model_name="mock-sql-v1",
+                    base_url="",
+                    config_names=tuple(c.name for c in DEFAULT_CONFIGS),
+                    gold_items=gold_items,
+                    con=con,
+                    cache_dir=resolved_cache_dir,
+                )
     finally:
         con.close()
 
-    primary = configs_out["full_schema_repair_on"]
+    primary_key = selected_configs[0].name
+    primary = configs_out[primary_key]
     report: dict[str, Any] = {
-        "schema_version": "1.0",
+        "schema_version": "1.1",
         "provider": cached_provider.provider_name,
         "model": cached_provider.model_name,
+        "response_model": cached_provider.response_model,
+        "base_url_host": cached_provider.base_url_host,
+        "temperature": DEFAULT_TEMPERATURE,
+        "run_date": cached_provider.run_date,
         "gold_set_path": "evals/gold.jsonl",
         "cache_file": f"evals/cache/{cached_provider.cache_path.name}",
         "n_total": len(gold_items),
+        "n_completed": primary["n_completed"],
+        "n_unresolved": primary["n_unresolved"],
+        "infrastructure_failures_count": primary["infrastructure_failures_count"],
         "n_answerable": primary["n_answerable"],
         "n_unanswerable": primary["n_unanswerable"],
-        "primary_config": "full_schema_repair_on",
+        "primary_config": primary_key,
         "headline": {
             "execution_accuracy": primary["execution_accuracy"],
             "execution_correct": primary["execution_correct"],
@@ -653,6 +837,10 @@ def run_evaluation(
         },
         "configurations": configs_out,
     }
+    if secondary_live_runs:
+        report["secondary_live_runs"] = secondary_live_runs
+    if harness_validation_run is not None:
+        report["harness_validation_run"] = harness_validation_run
 
     out_file = Path(metrics_path)
     out_file.parent.mkdir(parents=True, exist_ok=True)
@@ -676,6 +864,16 @@ def main(argv: Sequence[str] | None = None) -> int:
         help="Model name override.",
     )
     parser.add_argument(
+        "--base-url",
+        default=None,
+        help="Base URL override for openai_compatible provider.",
+    )
+    parser.add_argument(
+        "--configs",
+        default=None,
+        help="Comma-separated list of configuration names to evaluate.",
+    )
+    parser.add_argument(
         "--replay",
         action="store_true",
         help="Reproduce evaluation offline from evals/cache/*.jsonl without API calls.",
@@ -692,9 +890,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
+    cfg_list = (
+        tuple(x.strip() for x in args.configs.split(",") if x.strip()) if args.configs else None
+    )
     report = run_evaluation(
         provider_name=args.provider,
         model=args.model,
+        base_url=args.base_url,
+        config_names=cfg_list,
         replay=args.replay,
         gold_path=args.gold,
         metrics_path=args.out,
@@ -704,7 +907,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     acc_pct = hl["execution_accuracy"] * 100
     ci_low, ci_high = ci[0] * 100, ci[1] * 100
     print(
-        f"Provider: {report['provider']} ({report['model']}) | Replay: {args.replay}\n"
+        f"Provider: {report['provider']} (model={report['model']}, "
+        f"response_model={report['response_model']}, host={report['base_url_host']}, "
+        f"temp={report['temperature']}, date={report['run_date']}) | Replay: {args.replay}\n"
+        f"Completed: {report['n_completed']}/{report['n_total']} "
+        f"(Unresolved: {report['n_unresolved']}, "
+        f"Infra Failures: {report['infrastructure_failures_count']})\n"
         f"Execution Accuracy: {hl['execution_correct']}/{report['n_answerable']} "
         f"= {acc_pct:.1f}% (95% Wilson CI: [{ci_low:.1f}%, {ci_high:.1f}%])\n"
         f"Valid SQL Rate: {hl['valid_sql_rate'] * 100:.1f}% | "

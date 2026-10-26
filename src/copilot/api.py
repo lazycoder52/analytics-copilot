@@ -390,6 +390,9 @@ def create_app(
                 request_id=req_id,
             )
 
+        if result.status == "infra_error":
+            raise ProviderError(result.error or "Upstream LLM provider error")
+
         serialized_rows = [[_serialize_cell(c) for c in row] for row in result.rows]
         return AskResponse(
             request_id=result.request_id,
