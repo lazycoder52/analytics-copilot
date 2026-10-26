@@ -12,11 +12,15 @@ from copilot.pipeline import (
 )
 from copilot.providers import (
     CachedProvider,
+    InfrastructureError,
     MockProvider,
     ProviderError,
     RateLimitError,
     _call_with_backoff,
     create_provider,
+    extract_retry_after,
+    parse_duration_seconds,
+    sanitize_error_text,
 )
 
 
@@ -278,3 +282,59 @@ def test_create_provider_env_selection(monkeypatch, tmp_path):
 
     with pytest.raises(ProviderError, match="Unsupported"):
         create_provider("nonexistent_provider")
+
+
+def test_cached_provider_stores_metadata_fields(tmp_path):
+    import json
+
+    inner = MockProvider(
+        responses=[{"answerable": True, "reason": "ok", "sql": "SELECT 1"}],
+        model="mock-sql-v1",
+        run_date="2026-10-26",
+    )
+    cached = CachedProvider(inner, cache_dir=tmp_path, replay_only=False)
+    resp = cached.generate("Metadata test?", system_prompt="sys")
+    assert resp.response_model == "mock-sql-v1"
+    assert resp.base_url_host == "local-mock"
+    assert resp.temperature == 0.0
+    assert resp.run_date == "2026-10-26"
+
+    lines = cached.cache_path.read_text(encoding="utf-8").strip().splitlines()
+    assert len(lines) == 1
+    row = json.loads(lines[0])
+    assert row["response_model"] == "mock-sql-v1"
+    assert row["base_url_host"] == "local-mock"
+    assert row["temperature"] == 0.0
+    assert row["run_date"] == "2026-10-26"
+
+
+def test_retry_after_and_secret_sanitization():
+    assert parse_duration_seconds("25.5s") == 25.5
+    assert parse_duration_seconds("2m30s") == 150.0
+    assert parse_duration_seconds("500ms") == 0.5
+    retry_sec, is_daily = extract_retry_after(
+        {"Retry-After": "17"}, '{"error": {"message": "Rate limit"}}'
+    )
+    assert retry_sec == 17.0
+    assert is_daily is False
+
+    scrubbed = sanitize_error_text(
+        "Failed with key gsk_secret12345 and Authorization: Bearer sk-abcdef123456"
+    )
+    assert "gsk_" not in scrubbed
+    assert "sk-" not in scrubbed
+    assert "[REDACTED]" in scrubbed
+
+
+def test_pipeline_infrastructure_error_isolated(con):
+    class FailingInfraProvider:
+        provider_name = "openai_compatible"
+        model_name = "test-model"
+
+        def generate(self, prompt: str, *, system_prompt: str = ""):
+            raise InfrastructureError("HTTP 503 Service Unavailable")
+
+    res = ask_question("How many rows are in sim_policy_summary?", con, FailingInfraProvider())
+    assert res.status == "infra_error"
+    assert res.error_category == "infrastructure_failure"
+    assert res.error is not None and "503" in res.error
