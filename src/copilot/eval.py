@@ -37,6 +37,7 @@ from typing import Any
 import duckdb
 
 from copilot.data import load_database
+from copilot.guard import SecurityViolation, validate_and_rewrite_sql
 from copilot.pipeline import ask_question
 from copilot.providers import (
     DEFAULT_TEMPERATURE,
@@ -131,6 +132,123 @@ GRAIN_ABLATION_CONFIGS: tuple[EvalConfig, ...] = (
 DEFAULT_CONFIGS: tuple[EvalConfig, ...] = BASELINE_CONFIGS + GRAIN_ABLATION_CONFIGS
 
 _CONFIG_BY_NAME: dict[str, EvalConfig] = {c.name: c for c in DEFAULT_CONFIGS}
+
+GUARD_ATTACK_VECTORS: dict[str, tuple[str, ...]] = {
+    "ddl_and_dml": (
+        "DROP TABLE weekly_store_family_summary",
+        "CREATE TABLE backdoor AS SELECT * FROM weekly_store_family_summary",
+        "ALTER TABLE weekly_store_family_summary RENAME TO hacked",
+        (
+            "INSERT INTO weekly_store_family_summary VALUES "
+            "(1, 'Quito', 'P', 'A', 1, 'DAIRY', '2023-01-01', 0, 0, 0, 0, 0, 0, 0, 0, 0)"
+        ),
+        "UPDATE weekly_store_family_summary SET total_sales = 0",
+        "DELETE FROM weekly_store_family_summary",
+        "COPY weekly_store_family_summary TO 'dump.parquet'",
+        "ATTACH 'evil.db' AS evil",
+        "DETACH DATABASE evil",
+    ),
+    "admin_and_extensions": (
+        "PRAGMA version",
+        "SET enable_external_access = true",
+        "INSTALL httpfs",
+        "LOAD httpfs",
+        "WITH cte AS (SELECT 1) INSERT INTO weekly_store_family_summary SELECT * FROM cte",
+    ),
+    "file_and_function_allowlist": (
+        "SELECT * FROM 'data/weekly_store_family_summary.parquet'",
+        "SELECT * FROM 'secret.csv'",
+        "SELECT * FROM read_parquet('data/weekly_store_family_summary.parquet')",
+        "SELECT * FROM read_csv('secret.csv')",
+        "SELECT * FROM glob('*.parquet')",
+        "SELECT read_text('secret.ini')",
+        "SELECT read_blob('secret.ini')",
+        "SELECT * FROM parquet_scan('x.parquet')",
+        "SELECT parquet_metadata('x.parquet')",
+        "SELECT parquet_schema('x.parquet')",
+        "SELECT * FROM sniff_csv('x.csv')",
+        "SELECT query('SELECT 1')",
+        "SELECT query_table('weekly_store_family_summary')",
+        "SELECT getenv('PATH')",
+        "SELECT current_query()",
+        "SELECT version()",
+    ),
+    "system_catalogs_and_unallowlisted_tables": (
+        "SELECT * FROM duckdb_tables()",
+        "SELECT duckdb_memory()",
+        "SELECT current_setting('enable_external_access')",
+        "SELECT * FROM information_schema.tables",
+        "SELECT * FROM information_schema.columns",
+        "SELECT * FROM duckdb_tables",
+        "SELECT * FROM duckdb_columns()",
+        "SELECT * FROM pragma_database_list()",
+        "SELECT * FROM pragma_table_info('weekly_store_family_summary')",
+        "SELECT * FROM sqlite_master",
+        "SELECT sql FROM sqlite_temp_master",
+        "WITH evil_cte AS (SELECT * FROM secret_table) SELECT * FROM evil_cte",
+        "SELECT * FROM (SELECT * FROM unauthorized_table) AS sub",
+        (
+            "SELECT * FROM weekly_store_family_summary WHERE total_sales > "
+            "(SELECT count(*) FROM read_csv('foo.csv'))"
+        ),
+    ),
+    "multi_statement_and_syntax": (
+        "SELECT 1 FROM weekly_store_family_summary; DROP TABLE weekly_store_family_summary;",
+        (
+            "SELECT 1 FROM weekly_store_family_summary -- comment\n"
+            "; DROP TABLE weekly_store_family_summary;"
+        ),
+        (
+            "SELECT 1 FROM weekly_store_family_summary /* comment */;"
+            " DROP TABLE weekly_store_family_summary;"
+        ),
+        "",
+        "SELECT * FROM WHERE ORDER BY ;;;",
+    ),
+    "resource_and_identifier_spoofing": (
+        "SELECT * FROM generate_series(1, 100000000)",
+        "SELECT * FROM range(1, 100000000)",
+        "SELECT * FROM weekly_store_family_summary CROSS JOIN generate_series(1, 1000000)",
+        f"SELECT {'(' * 60}1{' + 1)' * 60} FROM weekly_store_family_summary",
+        'SELECT * FROM " weekly_store_family_summary"',
+        'SELECT * FROM "weekly_store_family_summary.parquet"',
+        'SELECT * FROM "sim_policy_summary\u200b"',
+    ),
+}
+
+
+def evaluate_guard_attack_suite() -> dict[str, Any]:
+    """Run all adversarial SQL guard attack vectors and return blocked/total counts."""
+    allowlist = {
+        "weekly_store_family_summary",
+        "promo_elasticity_summary",
+        "zero_sales_day_proxy_summary",
+        "perishable_volatility_summary",
+        "sim_policy_summary",
+    }
+    total_blocked = 0
+    total_vectors = 0
+    by_category: dict[str, dict[str, Any]] = {}
+    for category, queries in GUARD_ATTACK_VECTORS.items():
+        cat_blocked = 0
+        for q in queries:
+            total_vectors += 1
+            try:
+                validate_and_rewrite_sql(q, allowlist)
+            except SecurityViolation:
+                cat_blocked += 1
+                total_blocked += 1
+        by_category[category] = {
+            "blocked": cat_blocked,
+            "total": len(queries),
+            "block_rate": round(cat_blocked / len(queries), 4) if queries else 1.0,
+        }
+    return {
+        "blocked": total_blocked,
+        "total": total_vectors,
+        "block_rate": round(total_blocked / total_vectors, 4) if total_vectors else 1.0,
+        "by_category": by_category,
+    }
 
 
 def wilson_ci(successes: int, total: int, z: float = 1.959963984540054) -> tuple[float, float]:
@@ -768,6 +886,7 @@ def _evaluate_secondary_cached_run(
             "total_tokens": primary_cfg["total_tokens"],
         },
         "configurations": configs_out,
+        "guard_attack_suite": evaluate_guard_attack_suite(),
     }
 
 
@@ -948,6 +1067,7 @@ def run_evaluation(
             "total_tokens": primary["total_tokens"],
         },
         "configurations": configs_out,
+        "guard_attack_suite": evaluate_guard_attack_suite(),
     }
     if heldout_out is not None:
         report["heldout_evaluation"] = heldout_out

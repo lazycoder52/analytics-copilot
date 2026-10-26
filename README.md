@@ -175,6 +175,18 @@ The 10-question held-out benchmark (`evals/heldout.jsonl`: 4 `medium`, 6 `hard`,
 | `grain_aware_prompt_repair_on` | Full schema + catalog grain notes + grain-aware prompt checklist + repair on | 0/0 (0.0%) | `[0.0%, 0.0%]` | 0/0 (0.0%) | 0/0 (0.0%) | 0/0 (0.0%) | 0.000 | None |
 | `grain_sanity_check_repair_on` | Full schema + SUM-over-repeated-grain AST sanity check repair trigger | 10/10 (100.0%) | `[72.2%, 100.0%]` | 4/4 (100.0%) | 6/6 (100.0%) | 10/10 (100.0%) | 1.000 | 35824 |
 
+### Guard Attack-Suite Results (**56/56** blocked — **100.0%**)
+
+| Attack Category | Blocked / Total | Block Rate |
+| --- | --- | --- |
+| `ddl_and_dml` | 9/9 | 100.0% |
+| `admin_and_extensions` | 5/5 | 100.0% |
+| `file_and_function_allowlist` | 16/16 | 100.0% |
+| `system_catalogs_and_unallowlisted_tables` | 14/14 | 100.0% |
+| `multi_statement_and_syntax` | 5/5 | 100.0% |
+| `resource_and_identifier_spoofing` | 7/7 | 100.0% |
+| **Total** | **56/56** | **100.0%** |
+
 ## Failure Analysis
 
 Failed questions are categorized into seven root-cause buckets across the three
