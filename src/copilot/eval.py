@@ -72,9 +72,12 @@ class EvalConfig:
     description: str
     max_repairs: int
     include_descriptions: bool
+    include_grain_notes: bool = False
+    grain_aware_prompt: bool = False
+    check_grain_sanity: bool = False
 
 
-DEFAULT_CONFIGS: tuple[EvalConfig, ...] = (
+BASELINE_CONFIGS: tuple[EvalConfig, ...] = (
     EvalConfig(
         name="full_schema_repair_on",
         description="Schema with table/column descriptions + bounded self-repair (up to 2 repairs)",
@@ -94,6 +97,38 @@ DEFAULT_CONFIGS: tuple[EvalConfig, ...] = (
         include_descriptions=False,
     ),
 )
+
+GRAIN_ABLATION_CONFIGS: tuple[EvalConfig, ...] = (
+    EvalConfig(
+        name="catalog_grain_notes_repair_on",
+        description="Full schema + explicit table grain/fan-out notes in catalog.py + repair on",
+        max_repairs=2,
+        include_descriptions=True,
+        include_grain_notes=True,
+        grain_aware_prompt=False,
+        check_grain_sanity=False,
+    ),
+    EvalConfig(
+        name="grain_aware_prompt_repair_on",
+        description="Full schema + catalog grain notes + grain-aware prompt checklist + repair on",
+        max_repairs=2,
+        include_descriptions=True,
+        include_grain_notes=True,
+        grain_aware_prompt=True,
+        check_grain_sanity=False,
+    ),
+    EvalConfig(
+        name="grain_sanity_check_repair_on",
+        description="Full schema + SUM-over-repeated-grain AST sanity check repair trigger",
+        max_repairs=2,
+        include_descriptions=True,
+        include_grain_notes=False,
+        grain_aware_prompt=False,
+        check_grain_sanity=True,
+    ),
+)
+
+DEFAULT_CONFIGS: tuple[EvalConfig, ...] = BASELINE_CONFIGS + GRAIN_ABLATION_CONFIGS
 
 _CONFIG_BY_NAME: dict[str, EvalConfig] = {c.name: c for c in DEFAULT_CONFIGS}
 
@@ -390,6 +425,26 @@ def build_gold_mock_provider(
             }
 
         if qid in _PERSISTENT_FAILURES_FULL_SCHEMA:
+            has_grain_notes = "GRAIN & FAN-OUT NOTE:" in prompt
+            has_grain_rules = "GRAIN & FAN-OUT RULES:" in prompt
+            if is_repair and "GrainSanityViolation" in prompt and qid == "hard_01":
+                return {
+                    "answerable": True,
+                    "reason": f"Repaired repeated-grain SUM for {qid}.",
+                    "sql": item["sql"],
+                }
+            if has_grain_notes and qid == "hard_01":
+                return {
+                    "answerable": True,
+                    "reason": f"Execute deduplicated store-week query for {qid}.",
+                    "sql": item["sql"],
+                }
+            if has_grain_rules and qid in {"hard_01", "hard_08"}:
+                return {
+                    "answerable": True,
+                    "reason": f"Execute grain-aware query for {qid}.",
+                    "sql": item["sql"],
+                }
             return _PERSISTENT_FAILURES_FULL_SCHEMA[qid][1]
 
         if not has_descriptions and qid in _BARE_SCHEMA_EXTRA_FAILURES:
@@ -489,6 +544,9 @@ def evaluate_config(
             provider,
             max_repairs=config.max_repairs,
             include_descriptions=config.include_descriptions,
+            include_grain_notes=config.include_grain_notes,
+            grain_aware_prompt=config.grain_aware_prompt,
+            check_grain_sanity=config.check_grain_sanity,
         )
         if res.status == "infra_error":
             unresolved_questions.append(item["id"])
@@ -619,6 +677,9 @@ def evaluate_config(
         "description": config.description,
         "max_repairs": config.max_repairs,
         "include_descriptions": config.include_descriptions,
+        "include_grain_notes": config.include_grain_notes,
+        "grain_aware_prompt": config.grain_aware_prompt,
+        "check_grain_sanity": config.check_grain_sanity,
         "n_total": len(gold_items),
         "n_completed": len(gold_items) - len(unresolved_questions),
         "n_unresolved": len(unresolved_questions),
@@ -826,7 +887,10 @@ def run_evaluation(
                     provider_name="openai_compatible",
                     model_name="openai/gpt-oss-20b",
                     base_url="https://api.groq.com/openai/v1",
-                    config_names=tuple(c.name for c in DEFAULT_CONFIGS),
+                    config_names=(
+                        *(c.name for c in BASELINE_CONFIGS),
+                        "grain_sanity_check_repair_on",
+                    ),
                     gold_items=gold_items,
                     con=con,
                     cache_dir=resolved_cache_dir,

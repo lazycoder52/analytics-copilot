@@ -130,6 +130,14 @@ refusal.
 | `full_schema_repair_on` | Full catalog descriptions + repair loop (<= 2 retries) | 28/40 (70.0%) | `[54.6%, 81.9%]` | 40/40 (100.0%) | 5/5 (100.0%) | 1.000 | 149266 |
 | `full_schema_repair_off` | Full catalog descriptions + repair loop disabled (0 retries) | 28/40 (70.0%) | `[54.6%, 81.9%]` | 40/40 (100.0%) | 5/5 (100.0%) | 1.000 | 149266 |
 | `bare_schema_repair_on` | Bare schema (names & types only, no descriptions) + repair on | 26/40 (65.0%) | `[49.5%, 77.9%]` | 40/40 (100.0%) | 5/5 (100.0%) | 1.022 | 73368 |
+| `catalog_grain_notes_repair_on` | Full schema + explicit table grain/fan-out notes in catalog.py + repair on | 0/0 (0.0%) | `[0.0%, 0.0%]` | 0/0 (0.0%) | 0/0 (0.0%) | 0.000 | None |
+| `grain_aware_prompt_repair_on` | Full schema + catalog grain notes + grain-aware prompt checklist + repair on | 0/0 (0.0%) | `[0.0%, 0.0%]` | 0/0 (0.0%) | 0/0 (0.0%) | 0.000 | None |
+| `grain_sanity_check_repair_on` | Full schema + SUM-over-repeated-grain AST sanity check repair trigger | 28/40 (70.0%) | `[54.6%, 81.9%]` | 40/40 (100.0%) | 5/5 (100.0%) | 1.000 | 149266 |
+
+*Note on benchmark exposure*: The 45-question gold set (`evals/gold.jsonl`) was seen
+while inspecting failure modes and tuning grain rules, whereas the 10-question held-out
+set (`evals/heldout.jsonl`) was authored prior to any prompt/catalog changes and was
+not seen during tuning.
 
 *Note on `full_schema_repair_on` vs. `full_schema_repair_off` and sample size
 ($N = 40$ answerable, $N = 5$ unanswerable)*: In Run A (`openai/gpt-oss-120b`),
@@ -163,6 +171,9 @@ The 10-question held-out benchmark (`evals/heldout.jsonl`: 4 `medium`, 6 `hard`,
 | `full_schema_repair_on` | Schema with table/column descriptions + bounded self-repair (up to 2 repairs) | 10/10 (100.0%) | `[72.2%, 100.0%]` | 4/4 (100.0%) | 6/6 (100.0%) | 10/10 (100.0%) | 1.000 | 35824 |
 | `full_schema_repair_off` | Schema with table/column descriptions + repair loop disabled (0 repairs) | 10/10 (100.0%) | `[72.2%, 100.0%]` | 4/4 (100.0%) | 6/6 (100.0%) | 10/10 (100.0%) | 1.000 | 35824 |
 | `bare_schema_repair_on` | Bare schema (table/column names and types only, no descriptions) + repair on | 7/10 (70.0%) | `[39.7%, 89.2%]` | 3/4 (75.0%) | 4/6 (66.7%) | 10/10 (100.0%) | 1.000 | 18808 |
+| `catalog_grain_notes_repair_on` | Full schema + explicit table grain/fan-out notes in catalog.py + repair on | 10/10 (100.0%) | `[72.2%, 100.0%]` | 4/4 (100.0%) | 6/6 (100.0%) | 10/10 (100.0%) | 1.000 | 40594 |
+| `grain_aware_prompt_repair_on` | Full schema + catalog grain notes + grain-aware prompt checklist + repair on | 0/0 (0.0%) | `[0.0%, 0.0%]` | 0/0 (0.0%) | 0/0 (0.0%) | 0/0 (0.0%) | 0.000 | None |
+| `grain_sanity_check_repair_on` | Full schema + SUM-over-repeated-grain AST sanity check repair trigger | 10/10 (100.0%) | `[72.2%, 100.0%]` | 4/4 (100.0%) | 6/6 (100.0%) | 10/10 (100.0%) | 1.000 | 35824 |
 
 ## Failure Analysis
 

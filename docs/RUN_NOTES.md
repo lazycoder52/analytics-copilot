@@ -43,7 +43,35 @@
 3. **Local Ollama Status**:
    - Confirmed local `ollama` binary/server is not installed on the host machine.
 
-4. **Git Author Email Note**:
+4. **Held-Out Set & Grain Ablation Quota Notes (Tasks 2 & 3)**:
+   - Authored `evals/heldout.jsonl` (10 answerable questions: 4 `medium`, 6 `hard`, marked
+     `"review_status": "needs human review"` and listed in `docs/GOLD_REVIEW.md`) before making
+     any changes to `catalog.py`, `pipeline.py`, or `guard.py`.
+   - Baseline evaluation of `evals/heldout.jsonl` on Run A (`openai/gpt-oss-120b`) completed
+     **10/10** questions across `full_schema_repair_on` (`10/10 = 100.0%`),
+     `full_schema_repair_off` (`10/10 = 100.0%`), and `bare_schema_repair_on`
+     (`7/10 = 70.0%`, failing `holdout_med_03`, `holdout_hard_04` due to summing
+     `non_transferred_holidays` across stores, and `holdout_hard_05` due to joining
+     `weekly_store_family_summary` directly to `zero_sales_day_proxy_summary` without
+     pre-aggregating weekly rows).
+   - In Task 3 (`feat/grain-checks-and-ablation`), added explicit `grain_note` metadata to
+     `src/copilot/catalog.py`, `GRAIN_AWARE_INSTRUCTIONS` in `src/copilot/pipeline.py`, and
+     AST-level `GrainSanityViolation` checking in `src/copilot/guard.py` (`grain_sanity_check_repair_on`,
+     `catalog_grain_notes_repair_on`, and `grain_aware_prompt_repair_on`).
+   - `grain_sanity_check_repair_on` completed **45/45** on `evals/gold.jsonl` (`28/40 = 70.0%` on
+     `openai/gpt-oss-120b`; `38/40 = 95.0%` on `MockProvider` where `hard_01` is caught by
+     `GrainSanityViolation` and repaired on attempt 2) and **10/10** on `evals/heldout.jsonl`
+     (`10/10 = 100.0%`).
+   - `catalog_grain_notes_repair_on` completed **10/10** (`10/10 = 100.0%`) on `evals/heldout.jsonl`
+     with `openai/gpt-oss-120b` before `openai/gpt-oss-120b` reached Groq's 200,000 tokens-per-day
+     (TPD) quota (`Limit 200,000` after 121 cumulative cached calls across the 45-question gold
+     set and 10-question held-out set). Remaining uncached calls for `catalog_grain_notes_repair_on`
+     and `grain_aware_prompt_repair_on` on `openai/gpt-oss-120b` are recorded in
+     `infrastructure_failures` and excluded from accuracy denominators, while all 6 configurations
+     are evaluated 45/45 on gold and 10/10 on held-out in the deterministic harness validation run
+     (`mock-sql-v1`).
+
+5. **Git Author Email Note**:
    - Commit `93c9853` (`Merge pull request #8 from lazycoder52/docs/eval-status-note`) was
      created by GitHub's server-side merge API before the local `--no-ff` merge workflow was
      adopted. All subsequent PR merges are performed with local `--no-ff` merge commits pushed

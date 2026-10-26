@@ -143,23 +143,52 @@ class PipelineResult:
 
 _CODE_FENCE_RE = re.compile(r"^```(?:json)?\s*|\s*```$", re.IGNORECASE)
 
+GRAIN_AWARE_INSTRUCTIONS = (
+    "GRAIN & FAN-OUT RULES:\n"
+    "1. Store-week repeated columns: In weekly_store_family_summary, weekly_transactions is a "
+    "store-week total repeated across all 33 product families. NEVER compute "
+    "SUM(weekly_transactions) directly on weekly_store_family_summary. First deduplicate in a "
+    "CTE with MAX(weekly_transactions) AS wk_tx GROUP BY store_nbr, week_start_date (including "
+    "city or store_type when grouping or displaying by them), then SUM(wk_tx) in the outer query.\n"
+    "2. Chain-week repeated columns: avg_oil_price, holiday_count, and non_transferred_holidays "
+    "are chain-wide weekly figures repeated across all store-family rows. Deduplicate per "
+    "week_start_date in a CTE before summing holidays or averaging chain-wide weekly sales "
+    "(filter avg_oil_price IS NOT NULL when comparing oil regimes).\n"
+    "3. Series-to-weekly join fan-out: promo_elasticity_summary, zero_sales_day_proxy_summary, "
+    "and perishable_volatility_summary have 1 row per (store_nbr, family), whereas "
+    "weekly_store_family_summary has 1 row per (store_nbr, family, week_start_date). Always "
+    "pre-aggregate weekly_store_family_summary by (store_nbr, family) in a CTE before joining "
+    "to any series-level summary table.\n"
+    "4. Output columns: Return only the identifier and metric columns needed to answer the "
+    "question; when grouping by a category or family to report averages, include COUNT(*) as the "
+    "series/store count when appropriate, and include city when ranking top stores."
+)
+
 
 def build_prompt(
     question: str,
     con: duckdb.DuckDBPyConnection | None = None,
     *,
     include_descriptions: bool = True,
+    include_grain_notes: bool = False,
+    grain_aware_prompt: bool = False,
 ) -> str:
     """Construct the schema-grounded prompt with catalog definitions and 3 few-shot examples."""
-    catalog_text = render_catalog(con, include_descriptions=include_descriptions)
+    catalog_text = render_catalog(
+        con,
+        include_descriptions=include_descriptions,
+        include_grain_notes=include_grain_notes,
+    )
     examples_lines: list[str] = []
     for idx, ex in enumerate(FEW_SHOT_EXAMPLES, start=1):
         examples_lines.append(
             f"Example {idx}:\nQuestion: {ex['question']}\nResponse: {json.dumps(ex['response'])}"
         )
     examples_block = "\n\n".join(examples_lines)
+    grain_block = f"{GRAIN_AWARE_INSTRUCTIONS}\n\n" if grain_aware_prompt else ""
     return (
         f"DATABASE CATALOG:\n{catalog_text}\n\n"
+        f"{grain_block}"
         f"FEW-SHOT EXAMPLES:\n{examples_block}\n\n"
         f"USER QUESTION:\n{question.strip()}\n"
     )
@@ -254,6 +283,9 @@ def ask_question(
     *,
     max_repairs: int = DEFAULT_MAX_REPAIRS,
     include_descriptions: bool = True,
+    include_grain_notes: bool = False,
+    grain_aware_prompt: bool = False,
+    check_grain_sanity: bool = False,
     allowlisted_tables: Sequence[str] | set[str] | None = None,
     default_limit: int = DEFAULT_LIMIT,
     timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
@@ -268,7 +300,13 @@ def ask_question(
     else:
         allowed = {t.lower() for t in allowlisted_tables}
 
-    base_prompt = build_prompt(question, con, include_descriptions=include_descriptions)
+    base_prompt = build_prompt(
+        question,
+        con,
+        include_descriptions=include_descriptions,
+        include_grain_notes=include_grain_notes,
+        grain_aware_prompt=grain_aware_prompt,
+    )
     current_prompt = base_prompt
 
     max_attempts = max(1, 1 + max_repairs)
@@ -361,6 +399,7 @@ def ask_question(
                 allowlisted_tables=allowed,
                 default_limit=default_limit,
                 timeout_seconds=timeout_seconds,
+                check_grain_sanity=check_grain_sanity,
             )
         except SecurityViolation as err:
             last_error = f"SecurityViolation: {err}"
