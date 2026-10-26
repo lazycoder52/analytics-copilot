@@ -242,7 +242,15 @@ _ALLOWED_FUNCTION_NAMES = frozenset(
         "date",
         "time",
         "timestamp",
-        # Conditional / null
+        # Conditional / logical / null
+        "and",
+        "or",
+        "xor",
+        "not",
+        "is",
+        "in",
+        "between",
+        "exists",
         "coalesce",
         "nullif",
         "if",
@@ -251,6 +259,8 @@ _ALLOWED_FUNCTION_NAMES = frozenset(
         "case",
         "nvl",
         "nvl2",
+        "filter",
+        "within_group",
         # Cast / type
         "cast",
         "try_cast",
