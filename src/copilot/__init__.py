@@ -2,6 +2,7 @@
 
 __version__ = "0.1.0"
 
+from copilot.api import app, create_app
 from copilot.guard import (
     DEFAULT_LIMIT,
     DEFAULT_MEMORY_LIMIT,
@@ -56,8 +57,10 @@ __all__ = [
     "QueryTimeoutError",
     "RateLimitError",
     "SecurityViolation",
+    "app",
     "ask_question",
     "build_prompt",
+    "create_app",
     "create_provider",
     "execute_guarded_sql",
     "harden_connection",
