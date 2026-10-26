@@ -7,7 +7,7 @@ from pathlib import Path
 
 import duckdb
 
-from copilot.catalog import TABLE_NAMES
+from copilot.catalog import OPTIONAL_TABLE_NAMES, TABLE_NAMES
 
 DATA_DIR_ENV = "COPILOT_DATA_DIR"
 
@@ -21,9 +21,11 @@ def default_data_dir() -> Path:
 
 
 def load_database(data_dir: Path | str | None = None) -> duckdb.DuckDBPyConnection:
-    """Create an in-memory DuckDB connection with one table per catalogued Parquet file.
+    """Create an in-memory DuckDB connection with one table per Parquet file.
 
-    Tables are materialised (CREATE TABLE AS) so later queries never touch the filesystem.
+    Required tables must be present. Optional tables (see ``OPTIONAL_TABLE_NAMES``) are
+    loaded only if their file exists. Tables are materialised (CREATE TABLE AS) so later
+    queries never touch the filesystem.
     """
     directory = Path(data_dir) if data_dir is not None else default_data_dir()
     missing = [n for n in TABLE_NAMES if not (directory / f"{n}.parquet").is_file()]
@@ -33,8 +35,11 @@ def load_database(data_dir: Path | str | None = None) -> duckdb.DuckDBPyConnecti
             f"See data/README.md or set {DATA_DIR_ENV}."
         )
 
+    names = list(TABLE_NAMES) + [
+        n for n in OPTIONAL_TABLE_NAMES if (directory / f"{n}.parquet").is_file()
+    ]
     con = duckdb.connect(":memory:")
-    for name in TABLE_NAMES:
+    for name in names:
         path = (directory / f"{name}.parquet").as_posix()
         con.execute(f'CREATE TABLE "{name}" AS SELECT * FROM read_parquet(?)', [path])
     return con
