@@ -71,9 +71,23 @@
      are evaluated 45/45 on gold and 10/10 on held-out in the deterministic harness validation run
      (`mock-sql-v1`).
 
-5. **Git Author Email Note**:
+5. **Guard Attack-Suite & Docker CI (Tasks 4 & 5)**:
+   - Added deterministic SQL guard attack-suite evaluation (`evaluate_guard_attack_suite()` in
+     `src/copilot/eval.py`) covering **56/56 (`100.0%`)** blocked adversarial SQL vectors across
+     6 categories (`ddl_and_dml`: `9/9`, `admin_and_extensions`: `5/5`,
+     `file_and_function_allowlist`: `17/17`, `system_catalogs_and_unallowlisted_tables`: `14/14`,
+     `multi_statement_and_syntax`: `5/5`, `resource_and_identifier_spoofing`: `6/6`) in
+     `metrics/metrics.json` and `README.md`.
+   - Added `.dockerignore`, `Dockerfile` (non-root `appuser`, no secrets in image, default
+     `COPILOT_LLM_PROVIDER=mock`), and a `docker` job in `.github/workflows/ci.yml` that builds
+     the image, starts the container, and verifies `GET /health` returns `"status":"ok"` and
+     `"tables_loaded":11`.
+
+6. **Git Author Email & History Verification (Task 6)**:
    - Commit `93c9853` (`Merge pull request #8 from lazycoder52/docs/eval-status-note`) was
      created by GitHub's server-side merge API before the local `--no-ff` merge workflow was
-     adopted. All subsequent PR merges are performed with local `--no-ff` merge commits pushed
-     to `origin/main` using `214386450+lazycoder52@users.noreply.github.com`, and Task 6
-     performs a final `git filter-branch` check and cleanup once Tasks 1–5 are merged.
+     adopted. All subsequent PR merges (`#9`–`#14`) were performed with local `--no-ff` merge
+     commits using `214386450+lazycoder52@users.noreply.github.com`, followed by Task 6's
+     `git filter-branch` rewrite across `--all` (backed up to local tag `pre-rewrite` before
+     removing `refs/original/*` and `pre-rewrite` so `git log --all --format=%ae | sort -u`
+     outputs exclusively `214386450+lazycoder52@users.noreply.github.com`).
