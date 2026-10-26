@@ -303,6 +303,28 @@ def _render_difficulty_section(metrics: dict[str, Any]) -> list[str]:
     ]
 
 
+def _render_guard_attack_section(metrics: dict[str, Any]) -> list[str]:
+    guard = metrics.get("guard_attack_suite")
+    if not guard:
+        return []
+    blocked = guard["blocked"]
+    total = guard["total"]
+    rate_pct = _fmt_pct(guard["block_rate"])
+    lines = [
+        "",
+        f"### Guard Attack-Suite Results (**{blocked}/{total}** blocked — **{rate_pct}**)",
+        "",
+        "| Attack Category | Blocked / Total | Block Rate |",
+        "| --- | --- | --- |",
+    ]
+    for cat, stats in guard.get("by_category", {}).items():
+        lines.append(
+            f"| `{cat}` | {stats['blocked']}/{stats['total']} | {_fmt_pct(stats['block_rate'])} |"
+        )
+    lines.append(f"| **Total** | **{blocked}/{total}** | **{rate_pct}** |")
+    return lines
+
+
 def _render_heldout_section(metrics: dict[str, Any]) -> list[str]:
     heldout = metrics.get("heldout_evaluation")
     if not heldout:
@@ -570,6 +592,7 @@ def render_readme(metrics: dict[str, Any]) -> str:
         "",
         *_render_difficulty_section(metrics),
         *_render_heldout_section(metrics),
+        *_render_guard_attack_section(metrics),
         "",
         "## Failure Analysis",
         "",
