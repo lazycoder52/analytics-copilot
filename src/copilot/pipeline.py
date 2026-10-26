@@ -35,7 +35,7 @@ from copilot.guard import (
     SecurityViolation,
     execute_guarded_sql,
 )
-from copilot.providers import LLMProvider
+from copilot.providers import LLMProvider, ProviderError, sanitize_error_text
 
 logger = logging.getLogger(__name__)
 
@@ -276,6 +276,7 @@ def ask_question(
     prompt_tokens: int | None = None
     completion_tokens: int | None = None
     total_tokens: int | None = None
+    llm_latency_ms: float = 0.0
 
     last_error: str | None = None
     last_error_category: str | None = None
@@ -284,7 +285,34 @@ def ask_question(
 
     for attempt_idx in range(1, max_attempts + 1):
         attempts = attempt_idx
-        llm_resp = provider.generate(current_prompt, system_prompt=SYSTEM_PROMPT)
+        try:
+            llm_resp = provider.generate(current_prompt, system_prompt=SYSTEM_PROMPT)
+        except ProviderError as err:
+            infra_msg = sanitize_error_text(str(err))
+            wall_ms = round((time.perf_counter() - start_time) * 1000.0, 2)
+            eff_ms = round(llm_latency_ms, 2) if llm_latency_ms > 0 else wall_ms
+            _log_infrastructure_failure(req_id, provider, attempts, infra_msg)
+            return PipelineResult(
+                request_id=req_id,
+                question=question,
+                status="infra_error",
+                answerable=True,
+                answer=f"Infrastructure error on attempt {attempts}: {infra_msg}",
+                reason=last_reason,
+                sql=last_sql,
+                columns=(),
+                rows=(),
+                row_count=0,
+                attempts=attempts,
+                latency_ms=eff_ms,
+                prompt_tokens=prompt_tokens,
+                completion_tokens=completion_tokens,
+                total_tokens=total_tokens,
+                error=infra_msg,
+                error_category="infrastructure_failure",
+            )
+
+        llm_latency_ms += llm_resp.latency_ms
         prompt_tokens = _accumulate_tokens(prompt_tokens, llm_resp.prompt_tokens)
         completion_tokens = _accumulate_tokens(completion_tokens, llm_resp.completion_tokens)
         total_tokens = _accumulate_tokens(total_tokens, llm_resp.total_tokens)
@@ -303,7 +331,8 @@ def ask_question(
 
         last_reason = decision.reason
         if not decision.answerable:
-            latency_ms = round((time.perf_counter() - start_time) * 1000.0, 2)
+            wall_ms = round((time.perf_counter() - start_time) * 1000.0, 2)
+            latency_ms = round(llm_latency_ms, 2) if llm_latency_ms > 0 else wall_ms
             result = PipelineResult(
                 request_id=req_id,
                 question=question,
@@ -363,7 +392,8 @@ def ask_question(
 
         capped_rows = exec_res.rows[:MAX_DISPLAY_ROWS]
         answer_text = summarize_result(question, decision.reason, exec_res)
-        latency_ms = round((time.perf_counter() - start_time) * 1000.0, 2)
+        wall_ms = round((time.perf_counter() - start_time) * 1000.0, 2)
+        latency_ms = round(llm_latency_ms, 2) if llm_latency_ms > 0 else wall_ms
         result = PipelineResult(
             request_id=req_id,
             question=question,
@@ -384,7 +414,8 @@ def ask_question(
         _log_call(result, provider)
         return result
 
-    latency_ms = round((time.perf_counter() - start_time) * 1000.0, 2)
+    wall_ms = round((time.perf_counter() - start_time) * 1000.0, 2)
+    latency_ms = round(llm_latency_ms, 2) if llm_latency_ms > 0 else wall_ms
     error_msg = last_error or "Unknown pipeline failure"
     result = PipelineResult(
         request_id=req_id,
@@ -416,6 +447,27 @@ def _classify_duckdb_error(message: str) -> str:
     if "syntax error" in lowered or "parser error" in lowered:
         return "syntax_error"
     return "sql_execution_error"
+
+
+def _log_infrastructure_failure(
+    request_id: str,
+    provider: LLMProvider,
+    attempts: int,
+    error_message: str,
+) -> None:
+    logger.warning(
+        json.dumps(
+            {
+                "event": "copilot_infrastructure_failure",
+                "request_id": request_id,
+                "provider": provider.provider_name,
+                "model": provider.model_name,
+                "attempts": attempts,
+                "error": sanitize_error_text(error_message),
+            },
+            sort_keys=True,
+        )
+    )
 
 
 def _log_call(result: PipelineResult, provider: LLMProvider) -> None:
