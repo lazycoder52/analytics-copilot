@@ -18,7 +18,7 @@ from copilot.eval import (
     run_evaluation,
     wilson_ci,
 )
-from copilot.guard import execute_guarded_sql
+from copilot.guard import GrainSanityViolation, execute_guarded_sql, validate_and_rewrite_sql
 from copilot.providers import InfrastructureError
 from copilot.readme_gen import DEFAULT_README_PATH, render_readme
 
@@ -108,11 +108,49 @@ def test_replay_regenerates_committed_metrics_json_identically(tmp_path):
 
     # Verify ablations are present and consistent
     configs = replayed_data["configurations"]
-    assert set(configs) == {
+    expected_cfg_names = {
         "full_schema_repair_on",
         "full_schema_repair_off",
         "bare_schema_repair_on",
+        "catalog_grain_notes_repair_on",
+        "grain_aware_prompt_repair_on",
+        "grain_sanity_check_repair_on",
     }
+    assert set(configs) == expected_cfg_names
+    assert set(replayed_data["heldout_evaluation"]["configurations"]) == expected_cfg_names
+
+
+def test_grain_sanity_check_blocks_sum_over_repeated_grain_and_allows_deduplicated_cte():
+    with pytest.raises(GrainSanityViolation, match="weekly_transactions"):
+        validate_and_rewrite_sql(
+            "SELECT store_nbr, SUM(weekly_transactions) "
+            "FROM weekly_store_family_summary GROUP BY store_nbr",
+            check_grain_sanity=True,
+        )
+
+    with pytest.raises(GrainSanityViolation, match="non_transferred_holidays"):
+        validate_and_rewrite_sql(
+            "SELECT SUM(non_transferred_holidays) FROM weekly_store_family_summary",
+            check_grain_sanity=True,
+        )
+
+    with pytest.raises(GrainSanityViolation, match="store_nbr"):
+        validate_and_rewrite_sql(
+            "WITH wk AS (SELECT store_nbr, week_start_date, MAX(non_transferred_holidays) AS h "
+            "FROM weekly_store_family_summary GROUP BY store_nbr, week_start_date) "
+            "SELECT SUM(h) FROM wk",
+            check_grain_sanity=True,
+        )
+
+    # Deduplicated CTE should pass
+    valid = validate_and_rewrite_sql(
+        "WITH store_weeks AS ("
+        "SELECT store_nbr, week_start_date, MAX(weekly_transactions) AS wk_tx "
+        "FROM weekly_store_family_summary GROUP BY store_nbr, week_start_date"
+        ") SELECT store_nbr, SUM(wk_tx) AS total_tx FROM store_weeks GROUP BY store_nbr",
+        check_grain_sanity=True,
+    )
+    assert "SUM(wk_tx)" in valid
 
 
 def test_infrastructure_failures_excluded_from_accuracy_denominator(con):

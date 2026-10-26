@@ -33,6 +33,7 @@ class TableInfo:
     description: str
     columns: tuple[ColumnInfo, ...]
     optional: bool = False
+    grain_note: str = ""
 
     @property
     def column_names(self) -> tuple[str, ...]:
@@ -40,9 +41,19 @@ class TableInfo:
 
 
 def _t(
-    name: str, description: str, cols: list[tuple[str, str]], optional: bool = False
+    name: str,
+    description: str,
+    cols: list[tuple[str, str]],
+    optional: bool = False,
+    grain_note: str = "",
 ) -> TableInfo:
-    return TableInfo(name, description, tuple(ColumnInfo(n, d) for n, d in cols), optional)
+    return TableInfo(
+        name,
+        description,
+        tuple(ColumnInfo(n, d) for n, d in cols),
+        optional,
+        grain_note,
+    )
 
 
 _COMMON = {
@@ -117,6 +128,18 @@ _WEEKLY = _t(
             "none. Chain-wide, not store-specific.",
         ),
     ],
+    grain_note=(
+        "Grain is one row per (store_nbr, family, week_start_date). "
+        "Store-week column weekly_transactions is repeated across all 33 product families per "
+        "(store_nbr, week_start_date) — NEVER apply SUM(weekly_transactions) directly on "
+        "weekly_store_family_summary; first deduplicate in a CTE with MAX(weekly_transactions) "
+        "GROUP BY store_nbr, week_start_date (including city or store_type if needed) and then "
+        "SUM in the outer query. Chain-week columns avg_oil_price, holiday_count, and "
+        "non_transferred_holidays are repeated across all 1,782 store-family rows per "
+        "week_start_date — deduplicate by week_start_date in a CTE before summing, filter "
+        "avg_oil_price IS NOT NULL when bucketing oil regimes, and sum total_sales per "
+        "week_start_date in a CTE before computing average weekly chain sales."
+    ),
 )
 
 _PROMO = _t(
@@ -144,6 +167,11 @@ _PROMO = _t(
             "estimate.",
         ),
     ],
+    grain_note=(
+        "Grain is one row per (store_nbr, family) series (1,395 evaluated series). "
+        "Joining directly to weekly_store_family_summary fans out series-level columns across "
+        "weeks; pre-aggregate weekly_store_family_summary by (store_nbr, family) in a CTE first."
+    ),
 )
 
 _ZERO = _t(
@@ -170,6 +198,11 @@ _ZERO = _t(
             "LOW_ZERO_SALES_DAYS: everything else.",
         ),
     ],
+    grain_note=(
+        "Grain is one row per (store_nbr, family) series (1,728 series). "
+        "Joining directly to weekly_store_family_summary fans out series-level columns across "
+        "weeks; pre-aggregate weekly_store_family_summary by (store_nbr, family) in a CTE first."
+    ),
 )
 
 _PERISHABLE = _t(
@@ -205,6 +238,11 @@ _PERISHABLE = _t(
             "NON_PERISHABLE_OR_LOW_VOLATILITY: non-perishable series.",
         ),
     ],
+    grain_note=(
+        "Grain is one row per (store_nbr, family) series (1,525 series). "
+        "Joining directly to weekly_store_family_summary fans out series-level columns across "
+        "weeks; pre-aggregate weekly_store_family_summary by (store_nbr, family) in a CTE first."
+    ),
 )
 
 _SIM = _t(
@@ -252,6 +290,12 @@ _SIM = _t(
         ("warmup_days_excluded", f"Number of warm-up days excluded; {UNDOCUMENTED}."),
         ("n_store_families", f"Number of store-family series simulated; {UNDOCUMENTED}."),
     ],
+    grain_note=(
+        "Grain is one row per (policy, lead_time_days, service_level, "
+        "is_sensitivity_extrapolation) simulation scenario (39 chain-wide rows, not store-level). "
+        "Filter is_sensitivity_extrapolation = FALSE when comparing standard evaluated lead times "
+        "(L=3 and L=7) unless sensitivity extrapolation rows (L=14) are requested."
+    ),
 )
 
 _FORECAST = _t(
@@ -273,6 +317,10 @@ _FORECAST = _t(
         ),
     ],
     optional=True,
+    grain_note=(
+        "Grain is one row per (date, store_nbr, family, split). Pre-aggregate to "
+        "(store_nbr, family) before joining to series-level summary tables."
+    ),
 )
 
 CATALOG: tuple[TableInfo, ...] = (_WEEKLY, _PROMO, _ZERO, _PERISHABLE, _SIM, _FORECAST)
@@ -311,13 +359,16 @@ def render_catalog(
     con: duckdb.DuckDBPyConnection | None = None,
     *,
     include_descriptions: bool = True,
+    include_grain_notes: bool = False,
 ) -> str:
     """Render the catalog as plain text for prompts.
 
     With a connection, only tables that are loaded are described and live column types are
     included. Without one, the required tables are described without types. When
     ``include_descriptions`` is False, only table names, column names, and live column types
-    are rendered (used for the bare-schema ablation in the evaluation harness).
+    are rendered (used for the bare-schema ablation in the evaluation harness). When
+    ``include_grain_notes`` is True, each table's ``grain_note`` is rendered below the table
+    header to prevent repeated-grain double counting and join fan-out.
     """
     tables = loaded_tables(con) if con is not None else REQUIRED_TABLES
     blocks: list[str] = []
@@ -327,6 +378,8 @@ def render_catalog(
             lines = [f"TABLE {table.name}: {table.description}"]
         else:
             lines = [f"TABLE {table.name}:"]
+        if include_grain_notes and table.grain_note:
+            lines.append(f"  GRAIN & FAN-OUT NOTE: {table.grain_note}")
         for col in table.columns:
             type_part = f" ({types[col.name]})" if col.name in types else ""
             if include_descriptions:
