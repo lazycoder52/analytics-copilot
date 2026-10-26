@@ -8,13 +8,14 @@ in Ecuador).
 
 ## Evaluation status
 
-- **Primary provider in `metrics/metrics.json`**: `mock` (requested model `mock-sql-v1`, API-returned model `mock-sql-v1`, endpoint host `local-mock`, `temperature=0.0`, `run_date=2026-10-26`, cached in `evals/cache/mock_mock-sql-v1.jsonl`).
+- **Primary provider in `metrics/metrics.json` (Run A)**: `openai_compatible` (requested model `openai/gpt-oss-120b`, API-returned model `openai/gpt-oss-120b`, endpoint host `api.groq.com`, `temperature=0.0`, `run_date=2026-10-26`, cached in `evals/cache/openai_compatible_openai_gpt-oss-120b.jsonl`).
 - **Completion & infrastructure status**: **45/45** questions completed (**0** unresolved; **0** infrastructure failures excluded from accuracy denominators).
-- **Interpretation**: Current primary metrics come from the deterministic
-  `MockProvider` (**harness validation, not model quality**); latency and token
-  figures are mock values used to verify offline replay, ablation logic, and CI
-  reproducibility.
-- **Gateway alias note**: Free gateway model aliases such as `openai-fast` route to upstream models (currently returning `gpt-oss-20b` on `text.pollinations.ai` and `model_unavailable` on `api.llm7.io`) and may change over time.
+- **Interpretation**: Primary headline and ablation metrics come from recorded
+  live LLM calls against `api.groq.com` (`openai/gpt-oss-120b`) replayed
+  deterministically from `evals/cache/openai_compatible_openai_gpt-oss-120b.jsonl`.
+- **Secondary live provider (Run B — `api.groq.com`)**: `openai_compatible` (requested model `openai/gpt-oss-20b`, API-returned model `openai/gpt-oss-20b`, `temperature=0.0`, `run_date=2026-10-26`, cached in `evals/cache/openai_compatible_openai_gpt-oss-20b.jsonl`) — **45/45** completed, execution accuracy **30/40 (75.0%)** on `full_schema_repair_on`, and **29/40 (72.5%)** on `bare_schema_repair_on`.
+- **Harness validation baseline (`MockProvider` / `mock-sql-v1`)**: **harness validation only, not model quality** (latency and token counts are synthetic mock values; cached in `evals/cache/mock_mock-sql-v1.jsonl`, 37/40 = 92.5% on `full_schema_repair_on`).
+- **Gateway & rate-limit note**: Anonymous free gateways (`text.pollinations.ai/openai` and `api.llm7.io/v1` with alias `openai-fast`) were probed; `api.llm7.io` returned `HTTP 400 model_unavailable` and `text.pollinations.ai` enforced a 1 req/30s IP cap (attempted and abandoned after 31/45 questions in favor of `openai/gpt-oss-20b` on `api.groq.com`). Gateway aliases like `openai-fast` may change upstream routing over time.
 
 ## Problem
 
@@ -93,79 +94,92 @@ and edge tests):
 ## Evaluation Results
 
 All figures below are generated directly from `metrics/metrics.json` produced by
-`python -m copilot.eval --replay` (primary provider `mock`, requested model
-`mock-sql-v1`, API-returned model `mock-sql-v1`, endpoint host `local-mock`,
+`python -m copilot.eval --replay` (primary provider `openai_compatible`, requested model
+`openai/gpt-oss-120b`, API-returned model `openai/gpt-oss-120b`, endpoint host `api.groq.com`,
 `temperature=0.0`,
-`run_date=2026-10-26`, cached in `evals/cache/mock_mock-sql-v1.jsonl`).
+`run_date=2026-10-26`, cached in `evals/cache/openai_compatible_openai_gpt-oss-120b.jsonl`).
 The gold benchmark (`evals/gold.jsonl`, reviewed in `docs/GOLD_REVIEW.md`) contains
 **45** questions: **40** evaluated answerable questions (10 easy, 20 medium,
 10 hard) and **5** evaluated unanswerable/ambiguous questions that require
 refusal.
 
-### Headline Metrics (`full_schema_repair_on` — `mock` / `mock-sql-v1`)
+### Headline Metrics (`full_schema_repair_on` — `openai_compatible` / `openai/gpt-oss-120b`)
 
 | Metric | Value | 95% Wilson CI | Notes |
 | --- | --- | --- | --- |
-| **Execution Accuracy** | **37/40 (92.5%)** | `[80.1%, 97.4%]` | Order-insensitive result match (`rel_tol=1e-3`, `abs_tol=1e-2`) |
+| **Execution Accuracy** | **28/40 (70.0%)** | `[54.6%, 81.9%]` | Order-insensitive result match (`rel_tol=1e-3`, `abs_tol=1e-2`) |
 | **Valid-SQL Rate** | **40/40 (100.0%)** | `[91.2%, 100.0%]` | Syntactically valid, guard-approved SQL that executes in DuckDB |
 | **Refusal Accuracy** | **5/5 (100.0%)** | `[56.5%, 100.0%]` | Correctly refused unanswerable questions (`answerable=false`) |
-| **Mean Attempts** | **1.089** | n/a | Average LLM calls per question (max 3 with up to 2 repairs) |
-| **Latency (p50 / p95)** | **14.50 ms / 19.00 ms** | n/a | Deterministic offline replay latency model (mock) |
-| **Total Tokens** | **155128** | n/a | Sum of prompt and completion tokens across all evaluated questions |
+| **Mean Attempts** | **1.000** | n/a | Average LLM calls per question (max 3 with up to 2 repairs) |
+| **Latency (p50 / p95)** | **1199.52 ms / 2518.98 ms** | n/a | Recorded live LLM latency from `api.groq.com` (`openai/gpt-oss-120b`) |
+| **Total Tokens** | **149266** | n/a | Sum of prompt and completion tokens across all evaluated questions |
 
-### Configuration & Ablation Comparison (`mock` / `mock-sql-v1`)
+### Multi-Provider & Harness Comparison
+
+| Run Role | Provider | Requested Model | API-Returned Model | Host | Config | Completed | Execution Accuracy | 95% Wilson CI | Valid-SQL Rate | Refusal Accuracy | Latency (p50 / p95) | Total Tokens |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| **Live Run A (Headline)** | `openai_compatible` | `openai/gpt-oss-120b` | `openai/gpt-oss-120b` | `api.groq.com` | `full_schema_repair_on` | 45/45 | 28/40 (70.0%) | `[54.6%, 81.9%]` | 40/40 (100.0%) | 5/5 (100.0%) | 1199.52 / 2518.98 ms | 149266 |
+| **Live Run B** | `openai_compatible` | `openai/gpt-oss-20b` | `openai/gpt-oss-20b` | `api.groq.com` | `full_schema_repair_on` | 45/45 | 30/40 (75.0%) | `[59.8%, 85.8%]` | 40/40 (100.0%) | 5/5 (100.0%) | 1482.02 / 2440.30 ms | 154052 |
+| **Live Run B** | `openai_compatible` | `openai/gpt-oss-20b` | `openai/gpt-oss-20b` | `api.groq.com` | `bare_schema_repair_on` | 42/45 | 29/40 (72.5%) | `[57.2%, 83.9%]` | 40/40 (100.0%) | 2/2 (100.0%) | 1368.86 / 2747.96 ms | 70814 |
+| **Harness Validation (Mock)** | `mock` | `mock-sql-v1` | `mock-sql-v1` | `local-mock` | `full_schema_repair_on` | 45/45 | 37/40 (92.5%) | `[80.1%, 97.4%]` | 40/40 (100.0%) | 5/5 (100.0%) | 14.50 / 19.00 ms (mock) | 155128 (mock) |
+
+### Configuration & Ablation Comparison (`openai_compatible` / `openai/gpt-oss-120b`)
 
 | Configuration | Description | Execution Accuracy | 95% Wilson CI | Valid-SQL Rate | Refusal Accuracy | Mean Attempts | Total Tokens |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `full_schema_repair_on` | Full catalog descriptions + repair loop (<= 2 retries) | 37/40 (92.5%) | `[80.1%, 97.4%]` | 40/40 (100.0%) | 5/5 (100.0%) | 1.089 | 155128 |
-| `full_schema_repair_off` | Full catalog descriptions + repair loop disabled (0 retries) | 33/40 (82.5%) | `[68.0%, 91.2%]` | 36/40 (90.0%) | 5/5 (100.0%) | 1.000 | 141614 |
-| `bare_schema_repair_on` | Bare schema (names & types only, no descriptions) + repair on | 33/40 (82.5%) | `[68.0%, 91.2%]` | 40/40 (100.0%) | 5/5 (100.0%) | 1.089 | 61091 |
+| `full_schema_repair_on` | Full catalog descriptions + repair loop (<= 2 retries) | 28/40 (70.0%) | `[54.6%, 81.9%]` | 40/40 (100.0%) | 5/5 (100.0%) | 1.000 | 149266 |
+| `full_schema_repair_off` | Full catalog descriptions + repair loop disabled (0 retries) | 28/40 (70.0%) | `[54.6%, 81.9%]` | 40/40 (100.0%) | 5/5 (100.0%) | 1.000 | 149266 |
+| `bare_schema_repair_on` | Bare schema (names & types only, no descriptions) + repair on | 26/40 (65.0%) | `[49.5%, 77.9%]` | 40/40 (100.0%) | 5/5 (100.0%) | 1.022 | 73368 |
 
-*Statistical note on sample size ($N = 40$ answerable, $N = 5$ unanswerable)*:
-`full_schema_repair_on` achieves 92.5% (95% Wilson CI
-`[80.1%, 97.4%]`), compared with
-`full_schema_repair_off` at 82.5% (CI
-`[68.0%, 91.2%]`) and `bare_schema_repair_on` at
-82.5% (CI
-`[68.0%, 91.2%]`). Because the 95% Wilson
-confidence intervals overlap at $N = 40$, we report the specific query mechanisms
-recovered by schema descriptions and self-repair rather than claiming a statistically
-significant population difference.
+*Note on `full_schema_repair_on` vs. `full_schema_repair_off` and sample size
+($N = 40$ answerable, $N = 5$ unanswerable)*: In Run A (`openai/gpt-oss-120b`),
+`full_schema_repair_on` (70.0%, 95% Wilson CI
+`[54.6%, 81.9%]`) and `full_schema_repair_off`
+(70.0%, CI
+`[54.6%, 81.9%]`) are identical because all
+first-attempt queries were syntactically valid and guard-compliant
+(`valid_sql_rate = 100.0%`), meaning every failure was a
+silent semantic or grain error that executed without raising a DuckDB/guard exception.
+`bare_schema_repair_on` drops to 65.0% (CI
+`[49.5%, 77.9%]`) when column descriptions are
+removed. Because the 95% Wilson confidence intervals overlap at $N = 40$, we report
+the exact query failure mechanisms rather than claiming a statistically significant
+population difference.
 
-### Accuracy by Difficulty Tier (`full_schema_repair_on` — `mock-sql-v1`)
+### Accuracy by Difficulty Tier (`full_schema_repair_on` — Run A vs. Run B)
 
-| Difficulty Tier | Correct / Total | Accuracy | 95% Wilson CI |
-| --- | --- | --- | --- |
-| Easy (`easy_01` - `easy_10`) | 10/10 | 100.0% | `[72.2%, 100.0%]` |
-| Medium (`med_01` - `med_20`) | 20/20 | 100.0% | `[83.9%, 100.0%]` |
-| Hard (`hard_01` - `hard_10`) | 7/10 | 70.0% | `[39.7%, 89.2%]` |
+| Difficulty Tier | Run A (`openai/gpt-oss-120b`) | Run A 95% Wilson CI | Run B (`openai/gpt-oss-20b`) | Run B 95% Wilson CI |
+| --- | --- | --- | --- | --- |
+| Easy (`easy_01` - `easy_10`) | 10/10 (100.0%) | `[72.2%, 100.0%]` | 10/10 (100.0%) | `[72.2%, 100.0%]` |
+| Medium (`med_01` - `med_20`) | 14/20 (70.0%) | `[48.1%, 85.5%]` | 15/20 (75.0%) | `[53.1%, 88.8%]` |
+| Hard (`hard_01` - `hard_10`) | 4/10 (40.0%) | `[16.8%, 68.7%]` | 5/10 (50.0%) | `[23.7%, 76.3%]` |
 
 ## Failure Analysis
 
 Failed questions are categorized into seven root-cause buckets across the three
-configurations for `mock` (`mock-sql-v1`):
+configurations for `openai_compatible` (`openai/gpt-oss-120b`):
 
 | Failure Category | `full_schema_repair_on` | `full_schema_repair_off` | `bare_schema_repair_on` | Primary Mechanism |
 | --- | --- | --- | --- | --- |
-| `wrong_join_or_aggregation` | 1 | 1 | 2 | Averaging store-family rows instead of summing to chain-week first |
-| `wrong_column_semantics` | 2 | 2 | 5 | Summing repeated `weekly_transactions` across 33 families or omitting flags/enums |
-| `hallucinated_table_or_column` | 0 | 3 | 0 | Referencing nonexistent columns/tables on attempt 1 (repaired when repair is on) |
+| `wrong_join_or_aggregation` | 12 | 12 | 7 | Averaging store-family rows instead of summing to chain-week first |
+| `wrong_column_semantics` | 0 | 0 | 7 | Summing repeated `weekly_transactions` across 33 families or omitting flags/enums |
+| `hallucinated_table_or_column` | 0 | 0 | 0 | Referencing nonexistent columns/tables on attempt 1 (repaired when repair is on) |
 | `syntax_error` | 0 | 0 | 0 | Malformed SQL or JSON syntax |
 | `ambiguity` | 0 | 0 | 0 | False refusal or answering an unanswerable question |
-| `guard_blocked` | 0 | 1 | 0 | Calling blocked catalog/system functions on attempt 1 (repaired when repair is on) |
+| `guard_blocked` | 0 | 0 | 0 | Calling blocked catalog/system functions on attempt 1 (repaired when repair is on) |
 | `timeout` | 0 | 0 | 0 | Query exceeding the 10.0s execution watchdog |
 
-### Concrete Failure Examples (`full_schema_repair_on` — `mock-sql-v1`)
+### Concrete Failure Examples (`full_schema_repair_on` — `openai/gpt-oss-120b`)
 
-1. **`hard_01` (`wrong_column_semantics`)**: *Without double counting across product families, which 5 stores had the highest total weekly_transactions across all weeks in weekly_store_family_summary?*
-   - **Generated SQL**: `SELECT store_nbr, city, SUM(weekly_transactions) AS total_transactions FROM weekly_store_family_summary GROUP BY store_nbr, city ORDER BY total_transactions DESC LIMIT 5`
-   - **Reference SQL**: `WITH store_weeks AS (  SELECT store_nbr, city, week_start_date, MAX(weekly_transactions) AS wk_tx   FROM weekly_store_family_summary   GROUP BY store_nbr, city, week_start_date) SELECT store_nbr, city, SUM(wk_tx) AS total_transactions FROM store_weeks GROUP BY store_nbr, city ORDER BY total_transactions DESC LIMIT 5`
-   - **Why it failed**: `weekly_transactions` in `weekly_store_family_summary` is a store-level figure repeated on all 33 product-family rows for each `(store_nbr, week_start_date)`. Actual preview `[[44, 'Quito', 240012069]]` vs expected `[[44, 'Quito', 7273093]]`.
+1. **`med_04` (`wrong_join_or_aggregation`)**: *Which 5 store-family series in promo_elasticity_summary have the highest empirical_promo_lift_pct?*
+   - **Generated SQL**: `SELECT store_nbr, city, state, store_type, store_cluster, family, empirical_promo_lift_pct FROM promo_elasticity_summary ORDER BY empirical_promo_lift_pct DESC LIMIT 5`
+   - **Reference SQL**: `SELECT store_nbr, family, ROUND(empirical_promo_lift_pct, 2) AS empirical_promo_lift_pct FROM promo_elasticity_summary ORDER BY empirical_promo_lift_pct DESC LIMIT 5`
+   - **Why it failed**: Result set mismatch under `wrong_join_or_aggregation`: actual row preview `[[10.0, 'Quito', 'Pichincha', 'C', 15.0, 'SCHOOL AND OFFICE SUPPLIES', 3094.1201171875]]` did not match reference preview `[[36, 'SCHOOL AND OFFICE SUPPLIES', 7980.77002]]`.
 
-2. **`hard_08` (`wrong_join_or_aggregation`)**: *Compare chain-wide weekly unit sales in weeks with oil price below 50 vs weeks with oil price of 50 or above: what is the number of weeks and average weekly chain sales in each regime?*
-   - **Generated SQL**: `SELECT CASE WHEN avg_oil_price < 50 THEN 'UNDER_50' ELSE 'AT_OR_ABOVE_50' END AS oil_regime, COUNT(DISTINCT week_start_date) AS n_weeks, ROUND(AVG(total_sales), 2) AS avg_weekly_sales FROM weekly_store_family_summary WHERE NOT avg_oil_price IS NULL GROUP BY oil_regime ORDER BY oil_regime ASC LIMIT 100`
-   - **Reference SQL**: `WITH weekly_chain AS (  SELECT week_start_date, AVG(avg_oil_price) AS oil_price,   SUM(total_sales) AS chain_weekly_sales   FROM weekly_store_family_summary   WHERE avg_oil_price IS NOT NULL   GROUP BY week_start_date) SELECT CASE WHEN oil_price < 50 THEN 'UNDER_50' ELSE 'AT_OR_ABOVE_50' END AS oil_regime, COUNT(*) AS n_weeks, ROUND(AVG(chain_weekly_sales), 2) AS avg_weekly_sales FROM weekly_chain GROUP BY oil_regime ORDER BY oil_regime ASC`
-   - **Why it failed**: The query aggregated `total_sales` at the wrong grain rather than first summing chain-wide weekly sales by `week_start_date` in a CTE and then averaging across weeks. Actual preview `[['AT_OR_ABOVE_50', 145, 2153.72]]` vs expected `[['AT_OR_ABOVE_50', 145, 3837920.35]]`.
+2. **`med_07` (`wrong_join_or_aggregation`)**: *Which 5 HIGH_VELOCITY_ELEVATED_ZERO_SALES_DAYS_PROXY series in zero_sales_day_proxy_summary have the highest zero_sales_rate_pct?*
+   - **Generated SQL**: `SELECT store_nbr, city, state, family, zero_sales_rate_pct FROM zero_sales_day_proxy_summary WHERE zero_sales_proxy_tier = 'HIGH_VELOCITY_ELEVATED_ZERO_SALES_DAYS_PROXY' ORDER BY zero_sales_rate_pct DESC LIMIT 5`
+   - **Reference SQL**: `SELECT store_nbr, city, family, ROUND(zero_sales_rate_pct, 2) AS zero_sales_rate_pct, ROUND(mean_daily_sales, 2) AS mean_daily_sales FROM zero_sales_day_proxy_summary WHERE zero_sales_proxy_tier = 'HIGH_VELOCITY_ELEVATED_ZERO_SALES_DAYS_PROXY' ORDER BY zero_sales_rate_pct DESC, mean_daily_sales DESC LIMIT 5`
+   - **Why it failed**: Result set mismatch under `wrong_join_or_aggregation`: actual row preview `[[14.0, 'Riobamba', 'Chimborazo', 'PRODUCE', 23.729999542236328]]` did not match reference preview `[[18, 'Quito', 'PRODUCE', 31.309999, 1117.77002]]`.
 
 ## Reproducing Results & Running the Service
 
@@ -180,7 +194,7 @@ pip install -e ".[dev]"
 ### 2. Offline Replay Evaluation (No API Key Required)
 
 Reproduce `metrics/metrics.json` and update `README.md` strictly from the committed
-JSONL caches (`evals/cache/mock_mock-sql-v1.jsonl` and `evals/cache/*.jsonl`):
+JSONL caches (`evals/cache/openai_compatible_openai_gpt-oss-120b.jsonl` and `evals/cache/*.jsonl`):
 
 ```powershell
 python -m copilot.eval --replay
@@ -190,9 +204,9 @@ pytest
 
 ### 3. Live Provider Evaluation
 
-To run against an OpenAI-compatible endpoint (such as Groq, OpenRouter, or
-`text.pollinations.ai`), Google Gemini, or a local Ollama server, configure `.env`
-or environment variables (see `.env.example` and `docs/RUN_NOTES.md`):
+To run against an OpenAI-compatible endpoint (such as Groq or OpenRouter), Google
+Gemini, or a local Ollama server, configure `.env` or environment variables (see
+`.env.example` and `docs/RUN_NOTES.md`):
 
 ```powershell
 $env:COPILOT_LLM_PROVIDER = "openai_compatible"
@@ -226,10 +240,10 @@ uvicorn copilot.api:app --host 127.0.0.1 --port 8000
    pipeline. Store attribute codes (`store_type`, `store_cluster`) and several
    `sim_policy_summary` columns lack upstream documentation and are marked
    `definition not documented` in `catalog.py`.
-4. **Semantic errors do not trigger SQL repair**: Self-repair catches syntax errors,
-   DuckDB binder errors, and guard violations, but cannot detect when a valid SQL
-   query aggregates at the wrong grain (such as summing `weekly_transactions` across
-   product families).
+4. **Silent semantic errors do not trigger SQL execution repair**: Standard self-repair
+   catches syntax errors, DuckDB binder errors, and guard violations, but without
+   explicit grain sanity checks it cannot detect when a valid SQL query aggregates at
+   the wrong grain (such as summing `weekly_transactions` across product families).
 
 ## AI Tools Used
 

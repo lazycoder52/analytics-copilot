@@ -61,7 +61,7 @@ def _render_eval_status_block(metrics: dict[str, Any]) -> list[str]:
         "## Evaluation status",
         "",
         (
-            f"- **Primary provider in `metrics/metrics.json`**: `{provider}` "
+            f"- **Primary provider in `metrics/metrics.json` (Run A)**: `{provider}` "
             f"(requested model `{model}`, API-returned model `{response_model}`, "
             f"endpoint host `{host}`, `temperature={temp}`, `run_date={run_date}`, "
             f"cached in `{cache_file}`)."
@@ -91,14 +91,22 @@ def _render_eval_status_block(metrics: dict[str, Any]) -> list[str]:
         )
     for sec in metrics.get("secondary_live_runs", []):
         sec_hl = sec["headline"]
+        sec_cfgs = sec.get("configurations", {})
+        bare_str = ""
+        if "bare_schema_repair_on" in sec_cfgs:
+            bc = sec_cfgs["bare_schema_repair_on"]
+            bare_str = (
+                f", and **{bc['execution_correct']}/{bc['n_answerable']} "
+                f"({_fmt_pct(bc['execution_accuracy'])})** on `bare_schema_repair_on`"
+            )
         lines.append(
-            f"- **Secondary live provider (`{sec['base_url_host']}`)**: `{sec['provider']}` "
-            f"with requested alias `{sec['model']}` (API-returned model "
+            f"- **Secondary live provider (Run B — `{sec['base_url_host']}`)**: "
+            f"`{sec['provider']}` (requested model `{sec['model']}`, API-returned model "
             f"`{sec['response_model']}`, `temperature={sec['temperature']}`, "
             f"`run_date={sec['run_date']}`, cached in `{sec['cache_file']}`) — "
             f"**{sec['n_completed']}/{sec['n_total']}** completed, execution accuracy "
             f"**{sec_hl['execution_correct']}/{sec_hl['n_answerable']} "
-            f"({_fmt_pct(sec_hl['execution_accuracy'])})** on `{sec['primary_config']}`."
+            f"({_fmt_pct(sec_hl['execution_accuracy'])})** on `{sec['primary_config']}`{bare_str}."
         )
     if metrics.get("harness_validation_run") is not None:
         hv = metrics["harness_validation_run"]
@@ -111,9 +119,11 @@ def _render_eval_status_block(metrics: dict[str, Any]) -> list[str]:
             f"{_fmt_pct(hv_hl['execution_accuracy'])} on `{hv['primary_config']}`)."
         )
     lines.append(
-        "- **Gateway alias note**: Free gateway model aliases such as `openai-fast` route to "
-        "upstream models (currently returning `gpt-oss-20b` on `text.pollinations.ai` and "
-        "`model_unavailable` on `api.llm7.io`) and may change over time."
+        "- **Gateway & rate-limit note**: Anonymous free gateways (`text.pollinations.ai/openai` "
+        "and `api.llm7.io/v1` with alias `openai-fast`) were probed; `api.llm7.io` returned "
+        "`HTTP 400 model_unavailable` and `text.pollinations.ai` enforced a 1 req/30s IP cap "
+        "(attempted and abandoned after 31/45 questions in favor of `openai/gpt-oss-20b` on "
+        "`api.groq.com`). Gateway aliases like `openai-fast` may change upstream routing over time."
     )
     return lines
 
@@ -167,19 +177,18 @@ def _render_multi_provider_section(metrics: dict[str, Any]) -> list[str]:
     n_ans = metrics["n_answerable"]
     n_unans = metrics["n_unanswerable"]
     rows = [
-        "### Multi-Provider & Harness Comparison (`full_schema_repair_on`)",
+        "### Multi-Provider & Harness Comparison",
         "",
         (
-            "| Run Role | Provider | Requested Model | API-Returned Model | Host | Date "
+            "| Run Role | Provider | Requested Model | API-Returned Model | Host | Config "
             "| Completed | Execution Accuracy | 95% Wilson CI | Valid-SQL Rate "
             "| Refusal Accuracy | Latency (p50 / p95) | Total Tokens |"
         ),
         "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
         (
-            f"| **Primary Live** | `{metrics['provider']}` | `{metrics['model']}` "
+            f"| **Live Run A (Headline)** | `{metrics['provider']}` | `{metrics['model']}` "
             f"| `{metrics.get('response_model', metrics['model'])}` "
-            f"| `{metrics.get('base_url_host', 'local-mock')}` "
-            f"| `{metrics.get('run_date', '2026-10-26')}` "
+            f"| `{metrics.get('base_url_host', 'local-mock')}` | `full_schema_repair_on` "
             f"| {metrics.get('n_completed', metrics['n_total'])}/{metrics['n_total']} "
             f"| {hl['execution_correct']}/{n_ans} ({_fmt_pct(hl['execution_accuracy'])}) "
             f"| `{_fmt_ci(hl['execution_wilson_95_ci'])}` "
@@ -190,27 +199,31 @@ def _render_multi_provider_section(metrics: dict[str, Any]) -> list[str]:
         ),
     ]
     for sec in sec_runs:
-        shl = sec["headline"]
-        sa = shl["n_answerable"]
-        su = shl["n_unanswerable"]
-        rows.append(
-            f"| **Secondary Live** | `{sec['provider']}` | `{sec['model']}` "
-            f"| `{sec['response_model']}` | `{sec['base_url_host']}` | `{sec['run_date']}` "
-            f"| {sec['n_completed']}/{sec['n_total']} "
-            f"| {shl['execution_correct']}/{sa} ({_fmt_pct(shl['execution_accuracy'])}) "
-            f"| `{_fmt_ci(shl['execution_wilson_95_ci'])}` "
-            f"| {shl['valid_sql_count']}/{sa} ({_fmt_pct(shl['valid_sql_rate'])}) "
-            f"| {shl['refusal_correct']}/{su} ({_fmt_pct(shl['refusal_accuracy'])}) "
-            f"| {shl['latency_p50_ms']:.2f} / {shl['latency_p95_ms']:.2f} ms "
-            f"| {shl['total_tokens']} |"
-        )
+        sec_cfgs = sec.get("configurations", {})
+        for cfg_name in ("full_schema_repair_on", "bare_schema_repair_on"):
+            if cfg_name not in sec_cfgs:
+                continue
+            sc = sec_cfgs[cfg_name]
+            sa = sc["n_answerable"]
+            su = sc["n_unanswerable"]
+            rows.append(
+                f"| **Live Run B** | `{sec['provider']}` | `{sec['model']}` "
+                f"| `{sec['response_model']}` | `{sec['base_url_host']}` | `{cfg_name}` "
+                f"| {sc['n_completed']}/{sc['n_total']} "
+                f"| {sc['execution_correct']}/{sa} ({_fmt_pct(sc['execution_accuracy'])}) "
+                f"| `{_fmt_ci(sc['execution_accuracy_wilson_95_ci'])}` "
+                f"| {sc['valid_sql_count']}/{sa} ({_fmt_pct(sc['valid_sql_rate'])}) "
+                f"| {sc['refusal_correct']}/{su} ({_fmt_pct(sc['refusal_accuracy'])}) "
+                f"| {sc['latency_p50_ms']:.2f} / {sc['latency_p95_ms']:.2f} ms "
+                f"| {sc['total_tokens']} |"
+            )
     if hv is not None:
         hhl = hv["headline"]
         ha = hhl["n_answerable"]
         hu = hhl["n_unanswerable"]
         rows.append(
             f"| **Harness Validation (Mock)** | `{hv['provider']}` | `{hv['model']}` "
-            f"| `{hv['response_model']}` | `{hv['base_url_host']}` | `{hv['run_date']}` "
+            f"| `{hv['response_model']}` | `{hv['base_url_host']}` | `full_schema_repair_on` "
             f"| {hv['n_completed']}/{hv['n_total']} "
             f"| {hhl['execution_correct']}/{ha} ({_fmt_pct(hhl['execution_accuracy'])}) "
             f"| `{_fmt_ci(hhl['execution_wilson_95_ci'])}` "
@@ -221,6 +234,73 @@ def _render_multi_provider_section(metrics: dict[str, Any]) -> list[str]:
         )
     rows.append("")
     return rows
+
+
+def _render_difficulty_section(metrics: dict[str, Any]) -> list[str]:
+    response_model = metrics.get("response_model", metrics["model"])
+    c_on = metrics["configurations"]["full_schema_repair_on"]
+    d_easy = c_on["by_difficulty"]["easy"]
+    d_med = c_on["by_difficulty"]["medium"]
+    d_hard = c_on["by_difficulty"]["hard"]
+
+    sec_runs = metrics.get("secondary_live_runs", [])
+    if not sec_runs:
+        return [
+            f"### Accuracy by Difficulty Tier (`full_schema_repair_on` — `{response_model}`)",
+            "",
+            "| Difficulty Tier | Correct / Total | Accuracy | 95% Wilson CI |",
+            "| --- | --- | --- | --- |",
+            (
+                f"| Easy (`easy_01` - `easy_10`) | {d_easy['correct']}/{d_easy['total']} "
+                f"| {_fmt_pct(d_easy['accuracy'])} | `{_fmt_ci(d_easy['wilson_95_ci'])}` |"
+            ),
+            (
+                f"| Medium (`med_01` - `med_20`) | {d_med['correct']}/{d_med['total']} "
+                f"| {_fmt_pct(d_med['accuracy'])} | `{_fmt_ci(d_med['wilson_95_ci'])}` |"
+            ),
+            (
+                f"| Hard (`hard_01` - `hard_10`) | {d_hard['correct']}/{d_hard['total']} "
+                f"| {_fmt_pct(d_hard['accuracy'])} | `{_fmt_ci(d_hard['wilson_95_ci'])}` |"
+            ),
+        ]
+
+    sec = sec_runs[0]
+    sec_model = sec.get("response_model", sec["model"])
+    s_on = sec["configurations"]["full_schema_repair_on"]
+    s_easy = s_on["by_difficulty"]["easy"]
+    s_med = s_on["by_difficulty"]["medium"]
+    s_hard = s_on["by_difficulty"]["hard"]
+
+    return [
+        "### Accuracy by Difficulty Tier (`full_schema_repair_on` — Run A vs. Run B)",
+        "",
+        (
+            f"| Difficulty Tier | Run A (`{response_model}`) | Run A 95% Wilson CI "
+            f"| Run B (`{sec_model}`) | Run B 95% Wilson CI |"
+        ),
+        "| --- | --- | --- | --- | --- |",
+        (
+            f"| Easy (`easy_01` - `easy_10`) "
+            f"| {d_easy['correct']}/{d_easy['total']} ({_fmt_pct(d_easy['accuracy'])}) "
+            f"| `{_fmt_ci(d_easy['wilson_95_ci'])}` "
+            f"| {s_easy['correct']}/{s_easy['total']} ({_fmt_pct(s_easy['accuracy'])}) "
+            f"| `{_fmt_ci(s_easy['wilson_95_ci'])}` |"
+        ),
+        (
+            f"| Medium (`med_01` - `med_20`) "
+            f"| {d_med['correct']}/{d_med['total']} ({_fmt_pct(d_med['accuracy'])}) "
+            f"| `{_fmt_ci(d_med['wilson_95_ci'])}` "
+            f"| {s_med['correct']}/{s_med['total']} ({_fmt_pct(s_med['accuracy'])}) "
+            f"| `{_fmt_ci(s_med['wilson_95_ci'])}` |"
+        ),
+        (
+            f"| Hard (`hard_01` - `hard_10`) "
+            f"| {d_hard['correct']}/{d_hard['total']} ({_fmt_pct(d_hard['accuracy'])}) "
+            f"| `{_fmt_ci(d_hard['wilson_95_ci'])}` "
+            f"| {s_hard['correct']}/{s_hard['total']} ({_fmt_pct(s_hard['accuracy'])}) "
+            f"| `{_fmt_ci(s_hard['wilson_95_ci'])}` |"
+        ),
+    ]
 
 
 def render_readme(metrics: dict[str, Any]) -> str:
@@ -239,10 +319,6 @@ def render_readme(metrics: dict[str, Any]) -> str:
     c_on = configs["full_schema_repair_on"]
     c_off = configs["full_schema_repair_off"]
     c_bare = configs["bare_schema_repair_on"]
-
-    d_easy = c_on["by_difficulty"]["easy"]
-    d_med = c_on["by_difficulty"]["medium"]
-    d_hard = c_on["by_difficulty"]["hard"]
 
     fc_on = c_on["failure_counts"]
     fc_off = c_off["failure_counts"]
@@ -421,33 +497,22 @@ def render_readme(metrics: dict[str, Any]) -> str:
             "Bare schema (names & types only, no descriptions) + repair on",
         ),
         "",
-        "*Statistical note on sample size ($N = 40$ answerable, $N = 5$ unanswerable)*:",
-        f"`full_schema_repair_on` achieves {_fmt_pct(c_on['execution_accuracy'])} (95% Wilson CI",
-        f"`{_fmt_ci(c_on['execution_accuracy_wilson_95_ci'])}`), compared with",
-        f"`full_schema_repair_off` at {_fmt_pct(c_off['execution_accuracy'])} (CI",
-        f"`{_fmt_ci(c_off['execution_accuracy_wilson_95_ci'])}`) and `bare_schema_repair_on` at",
-        f"{_fmt_pct(c_bare['execution_accuracy'])} (CI",
-        f"`{_fmt_ci(c_bare['execution_accuracy_wilson_95_ci'])}`). Because the 95% Wilson",
-        "confidence intervals overlap at $N = 40$, we report the specific query mechanisms",
-        "recovered by schema descriptions and self-repair rather than claiming a statistically",
-        "significant population difference.",
+        "*Note on `full_schema_repair_on` vs. `full_schema_repair_off` and sample size",
+        f"($N = 40$ answerable, $N = 5$ unanswerable)*: In Run A (`{response_model}`),",
+        f"`full_schema_repair_on` ({_fmt_pct(c_on['execution_accuracy'])}, 95% Wilson CI",
+        f"`{_fmt_ci(c_on['execution_accuracy_wilson_95_ci'])}`) and `full_schema_repair_off`",
+        f"({_fmt_pct(c_off['execution_accuracy'])}, CI",
+        f"`{_fmt_ci(c_off['execution_accuracy_wilson_95_ci'])}`) are identical because all",
+        "first-attempt queries were syntactically valid and guard-compliant",
+        f"(`valid_sql_rate = {_fmt_pct(c_off['valid_sql_rate'])}`), meaning every failure was a",
+        "silent semantic or grain error that executed without raising a DuckDB/guard exception.",
+        f"`bare_schema_repair_on` drops to {_fmt_pct(c_bare['execution_accuracy'])} (CI",
+        f"`{_fmt_ci(c_bare['execution_accuracy_wilson_95_ci'])}`) when column descriptions are",
+        "removed. Because the 95% Wilson confidence intervals overlap at $N = 40$, we report",
+        "the exact query failure mechanisms rather than claiming a statistically significant",
+        "population difference.",
         "",
-        f"### Accuracy by Difficulty Tier (`full_schema_repair_on` — `{response_model}`)",
-        "",
-        "| Difficulty Tier | Correct / Total | Accuracy | 95% Wilson CI |",
-        "| --- | --- | --- | --- |",
-        (
-            f"| Easy (`easy_01` - `easy_10`) | {d_easy['correct']}/{d_easy['total']} "
-            f"| {_fmt_pct(d_easy['accuracy'])} | `{_fmt_ci(d_easy['wilson_95_ci'])}` |"
-        ),
-        (
-            f"| Medium (`med_01` - `med_20`) | {d_med['correct']}/{d_med['total']} "
-            f"| {_fmt_pct(d_med['accuracy'])} | `{_fmt_ci(d_med['wilson_95_ci'])}` |"
-        ),
-        (
-            f"| Hard (`hard_01` - `hard_10`) | {d_hard['correct']}/{d_hard['total']} "
-            f"| {_fmt_pct(d_hard['accuracy'])} | `{_fmt_ci(d_hard['wilson_95_ci'])}` |"
-        ),
+        *_render_difficulty_section(metrics),
         "",
         "## Failure Analysis",
         "",
@@ -536,9 +601,9 @@ def render_readme(metrics: dict[str, Any]) -> str:
         "",
         "### 3. Live Provider Evaluation",
         "",
-        "To run against an OpenAI-compatible endpoint (such as Groq, OpenRouter, or",
-        "`text.pollinations.ai`), Google Gemini, or a local Ollama server, configure `.env`",
-        "or environment variables (see `.env.example` and `docs/RUN_NOTES.md`):",
+        "To run against an OpenAI-compatible endpoint (such as Groq or OpenRouter), Google",
+        "Gemini, or a local Ollama server, configure `.env` or environment variables (see",
+        "`.env.example` and `docs/RUN_NOTES.md`):",
         "",
         "```powershell",
         '$env:COPILOT_LLM_PROVIDER = "openai_compatible"',
@@ -572,10 +637,10 @@ def render_readme(metrics: dict[str, Any]) -> str:
         "   pipeline. Store attribute codes (`store_type`, `store_cluster`) and several",
         "   `sim_policy_summary` columns lack upstream documentation and are marked",
         "   `definition not documented` in `catalog.py`.",
-        "4. **Semantic errors do not trigger SQL repair**: Self-repair catches syntax errors,",
-        "   DuckDB binder errors, and guard violations, but cannot detect when a valid SQL",
-        "   query aggregates at the wrong grain (such as summing `weekly_transactions` across",
-        "   product families).",
+        "4. **Silent semantic errors do not trigger SQL execution repair**: Standard self-repair",
+        "   catches syntax errors, DuckDB binder errors, and guard violations, but without",
+        "   explicit grain sanity checks it cannot detect when a valid SQL query aggregates at",
+        "   the wrong grain (such as summing `weekly_transactions` across product families).",
         "",
         "## AI Tools Used",
         "",
