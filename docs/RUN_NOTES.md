@@ -81,7 +81,7 @@
    - Added `.dockerignore`, `Dockerfile` (non-root `appuser`, no secrets in image, default
      `COPILOT_LLM_PROVIDER=mock`), and a `docker` job in `.github/workflows/ci.yml` that builds
      the image, starts the container, and verifies `GET /health` returns `"status":"ok"` and
-     `"tables_loaded":11`.
+     `"tables_loaded":6`.
 
 6. **Git Author Email & History Verification (Task 6)**:
    - Commit `93c9853` (`Merge pull request #8 from lazycoder52/docs/eval-status-note`) was

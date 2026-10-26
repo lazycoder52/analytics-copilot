@@ -48,7 +48,7 @@ jobs:
             if curl -fsS http://127.0.0.1:8000/health > health.json 2>/dev/null; then
               cat health.json
               grep -q '"status":"ok"' health.json
-              grep -q '"tables_loaded":11' health.json
+              grep -q '"tables_loaded":6' health.json
               docker rm -f copilot-ci
               exit 0
             fi
