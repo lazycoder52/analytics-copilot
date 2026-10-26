@@ -154,6 +154,16 @@ population difference.
 | Medium (`med_01` - `med_20`) | 14/20 (70.0%) | `[48.1%, 85.5%]` | 15/20 (75.0%) | `[53.1%, 88.8%]` |
 | Hard (`hard_01` - `hard_10`) | 4/10 (40.0%) | `[16.8%, 68.7%]` | 5/10 (50.0%) | `[23.7%, 76.3%]` |
 
+### Held-Out Set Evaluation (`evals/heldout.jsonl` — `openai/gpt-oss-120b`)
+
+The 10-question held-out benchmark (`evals/heldout.jsonl`: 4 `medium`, 6 `hard`, marked `needs human review` in `docs/GOLD_REVIEW.md`) was authored before any grain-aware prompt or sanity-check modifications. Note: the 45-question gold set (`evals/gold.jsonl`) was seen while inspecting failure modes, whereas the 10-question held-out set (`evals/heldout.jsonl`) was not.
+
+| Configuration | Description | Execution Accuracy | 95% Wilson CI | Medium (4) | Hard (6) | Valid-SQL Rate | Mean Attempts | Total Tokens |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `full_schema_repair_on` | Schema with table/column descriptions + bounded self-repair (up to 2 repairs) | 10/10 (100.0%) | `[72.2%, 100.0%]` | 4/4 (100.0%) | 6/6 (100.0%) | 10/10 (100.0%) | 1.000 | 35824 |
+| `full_schema_repair_off` | Schema with table/column descriptions + repair loop disabled (0 repairs) | 10/10 (100.0%) | `[72.2%, 100.0%]` | 4/4 (100.0%) | 6/6 (100.0%) | 10/10 (100.0%) | 1.000 | 35824 |
+| `bare_schema_repair_on` | Bare schema (table/column names and types only, no descriptions) + repair on | 7/10 (70.0%) | `[39.7%, 89.2%]` | 3/4 (75.0%) | 4/6 (66.7%) | 10/10 (100.0%) | 1.000 | 18808 |
+
 ## Failure Analysis
 
 Failed questions are categorized into seven root-cause buckets across the three

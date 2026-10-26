@@ -744,3 +744,190 @@ WITH city_family AS (  SELECT city, family, ROUND(AVG(promo_day_share_pct), 2) A
 **Question:** Which supplier had the longest average delivery delay for frozen foods in Ambato?
 
 **Expected Refusal Rationale:** Supplier identifiers and actual supplier delivery logs are not recorded; sim_policy_summary only evaluates fixed simulated lead_time_days (3 and 7).
+
+---
+
+# Held-Out Evaluation Set (`evals/heldout.jsonl` ? Needs Human Review)
+
+All 10 held-out questions below (4 `medium`, 6 `hard`, including grain/fan-out cases over repeated store-week and week-level columns) are marked **`needs human review`** and were authored before any grain-aware prompt or catalog edits.
+
+## `holdout_med_01` (MEDIUM) ? Answerable: Yes ? Status: `needs human review`
+
+**Question:** In weekly_store_family_summary, what are the total unit sales (total_sales) and total promoted item-days (total_promo_count) for each store_cluster, ordered by total unit sales descending (top 5 clusters)?
+
+**Reference SQL:**
+```sql
+SELECT store_cluster, ROUND(SUM(total_sales), 2) AS total_sales, SUM(total_promo_count) AS total_promo_count FROM weekly_store_family_summary GROUP BY store_cluster ORDER BY total_sales DESC LIMIT 5
+```
+
+**Expected Result (5 row(s)):**
+
+| store_cluster | total_sales | total_promo_count |
+| --- | --- | --- |
+| 14.0 | 157430525.01 | 743103.0 |
+| 6.0 | 114254388.85 | 976774.0 |
+| 8.0 | 107928247.74 | 500621.0 |
+| 11.0 | 100614277.02 | 407053.0 |
+| 10.0 | 85324432.47 | 864169.0 |
+
+## `holdout_med_02` (MEDIUM) ? Answerable: Yes ? Status: `needs human review`
+
+**Question:** In promo_elasticity_summary, what is the number of evaluated series and average promo_day_share_pct for each store_type, ordered by store_type ascending?
+
+**Reference SQL:**
+```sql
+SELECT store_type, COUNT(*) AS series_count, ROUND(AVG(promo_day_share_pct), 2) AS avg_promo_day_share_pct FROM promo_elasticity_summary GROUP BY store_type ORDER BY store_type ASC
+```
+
+**Expected Result (5 row(s)):**
+
+| store_type | series_count | avg_promo_day_share_pct |
+| --- | --- | --- |
+| A | 239.0 | 40.96 |
+| B | 213.0 | 35.81 |
+| C | 368.0 | 32.78 |
+| D | 470.0 | 39.25 |
+| E | 105.0 | 34.82 |
+
+## `holdout_med_03` (MEDIUM) ? Answerable: Yes ? Status: `needs human review`
+
+**Question:** In perishable_volatility_summary, which 5 cities have the highest average volatility_exposure_index across PERISHABLE series (return city, perishable_series, and avg_volatility_exposure_index)?
+
+**Reference SQL:**
+```sql
+SELECT city, COUNT(*) AS perishable_series, ROUND(AVG(volatility_exposure_index), 2) AS avg_volatility_exposure_index FROM perishable_volatility_summary WHERE perishability_class = 'PERISHABLE' GROUP BY city ORDER BY avg_volatility_exposure_index DESC LIMIT 5
+```
+
+**Expected Result (5 row(s)):**
+
+| city | perishable_series | avg_volatility_exposure_index |
+| --- | --- | --- |
+| Quito | 144.0 | 444.03 |
+| Cuenca | 24.0 | 306.86 |
+| Daule | 8.0 | 291.8 |
+| Manta | 16.0 | 252.44 |
+| Loja | 8.0 | 242.72 |
+
+## `holdout_med_04` (MEDIUM) ? Answerable: Yes ? Status: `needs human review`
+
+**Question:** In zero_sales_day_proxy_summary, for each state with at least 100 store-family series, what is the number of series and average zero_sales_days, ordered by average zero_sales_days descending?
+
+**Reference SQL:**
+```sql
+SELECT state, COUNT(*) AS series_count, ROUND(AVG(zero_sales_days), 2) AS avg_zero_sales_days FROM zero_sales_day_proxy_summary GROUP BY state HAVING COUNT(*) >= 100 ORDER BY avg_zero_sales_days DESC
+```
+
+**Expected Result (2 row(s)):**
+
+| state | series_count | avg_zero_sales_days |
+| --- | --- | --- |
+| Guayas | 350.0 | 269.03 |
+| Pichincha | 613.0 | 185.54 |
+
+## `holdout_hard_01` (HARD) ? Answerable: Yes ? Status: `needs human review`
+
+**Question:** In weekly_store_family_summary, what is the total store weekly_transactions across all stores for each calendar year from 2013 through 2017, ordered by year ascending?
+
+**Reference SQL:**
+```sql
+WITH store_weeks AS (SELECT store_nbr, week_start_date, EXTRACT(YEAR FROM week_start_date) AS yr, MAX(weekly_transactions) AS wk_tx FROM weekly_store_family_summary WHERE EXTRACT(YEAR FROM week_start_date) BETWEEN 2013 AND 2017 GROUP BY store_nbr, week_start_date, yr) SELECT yr, SUM(wk_tx) AS total_transactions FROM store_weeks GROUP BY yr ORDER BY yr ASC
+```
+
+**Expected Result (5 row(s)):**
+
+| yr | total_transactions |
+| --- | --- |
+| 2013.0 | 29043520.0 |
+| 2014.0 | 29925357.0 |
+| 2015.0 | 31092203.0 |
+| 2016.0 | 30984351.0 |
+| 2017.0 | 19998494.0 |
+
+## `holdout_hard_02` (HARD) ? Answerable: Yes ? Status: `needs human review`
+
+**Question:** In weekly_store_family_summary, what is the total store weekly_transactions for each store_type across the entire dataset, ordered by store_type ascending?
+
+**Reference SQL:**
+```sql
+WITH store_weeks AS (SELECT store_nbr, store_type, week_start_date, MAX(weekly_transactions) AS wk_tx FROM weekly_store_family_summary GROUP BY store_nbr, store_type, week_start_date) SELECT store_type, SUM(wk_tx) AS total_transactions FROM store_weeks GROUP BY store_type ORDER BY store_type ASC
+```
+
+**Expected Result (5 row(s)):**
+
+| store_type | total_transactions |
+| --- | --- |
+| A | 43215470.0 |
+| B | 20384902.0 |
+| C | 24788958.0 |
+| D | 46230088.0 |
+| E | 6859527.0 |
+
+## `holdout_hard_03` (HARD) ? Answerable: Yes ? Status: `needs human review`
+
+**Question:** In weekly_store_family_summary, which 5 cities recorded the highest total store weekly_transactions in calendar year 2016 (return city and total_transactions)?
+
+**Reference SQL:**
+```sql
+WITH store_weeks AS (SELECT store_nbr, city, week_start_date, MAX(weekly_transactions) AS wk_tx FROM weekly_store_family_summary WHERE EXTRACT(YEAR FROM week_start_date) = 2016 GROUP BY store_nbr, city, week_start_date) SELECT city, SUM(wk_tx) AS total_transactions FROM store_weeks GROUP BY city ORDER BY total_transactions DESC LIMIT 5
+```
+
+**Expected Result (5 row(s)):**
+
+| city | total_transactions |
+| --- | --- |
+| Quito | 15333992.0 |
+| Guayaquil | 3676803.0 |
+| Cuenca | 1416351.0 |
+| Ambato | 1257716.0 |
+| Santo Domingo | 1105737.0 |
+
+## `holdout_hard_04` (HARD) ? Answerable: Yes ? Status: `needs human review`
+
+**Question:** In weekly_store_family_summary, what is the total number of distinct-week non_transferred_holidays in each calendar year from 2013 through 2017, ordered by year ascending?
+
+**Reference SQL:**
+```sql
+WITH distinct_weeks AS (SELECT week_start_date, EXTRACT(YEAR FROM week_start_date) AS yr, MAX(non_transferred_holidays) AS wk_holidays FROM weekly_store_family_summary WHERE EXTRACT(YEAR FROM week_start_date) BETWEEN 2013 AND 2017 GROUP BY week_start_date, yr) SELECT yr, SUM(wk_holidays) AS total_non_transferred_holidays FROM distinct_weeks GROUP BY yr ORDER BY yr ASC
+```
+
+**Expected Result (5 row(s)):**
+
+| yr | total_non_transferred_holidays |
+| --- | --- |
+| 2013.0 | 49.0 |
+| 2014.0 | 67.0 |
+| 2015.0 | 51.0 |
+| 2016.0 | 82.0 |
+| 2017.0 | 26.0 |
+
+## `holdout_hard_05` (HARD) ? Answerable: Yes ? Status: `needs human review`
+
+**Question:** For the HIGH_VOLATILITY_PERISHABLE_PROXY series in perishable_volatility_summary, what is the count of paired series, their combined 2016 unit sales (total_sales from weekly_store_family_summary), and their combined series-level total_sales from zero_sales_day_proxy_summary?
+
+**Reference SQL:**
+```sql
+WITH sales_2016 AS (SELECT store_nbr, family, SUM(total_sales) AS sales_2016 FROM weekly_store_family_summary WHERE EXTRACT(YEAR FROM week_start_date) = 2016 GROUP BY store_nbr, family) SELECT COUNT(*) AS series_count, ROUND(SUM(s.sales_2016), 2) AS sales_2016, ROUND(SUM(z.total_sales), 2) AS all_time_series_sales FROM perishable_volatility_summary v JOIN sales_2016 s ON v.store_nbr = s.store_nbr AND v.family = s.family JOIN zero_sales_day_proxy_summary z ON v.store_nbr = z.store_nbr AND v.family = z.family WHERE v.volatility_proxy_tier = 'HIGH_VOLATILITY_PERISHABLE_PROXY'
+```
+
+**Expected Result (1 row(s)):**
+
+| series_count | sales_2016 | all_time_series_sales |
+| --- | --- | --- |
+| 61.0 | 36106464.23 | 103609059.33 |
+
+## `holdout_hard_06` (HARD) ? Answerable: Yes ? Status: `needs human review`
+
+**Question:** In sim_policy_summary, among non-extrapolated rows (is_sensitivity_extrapolation = FALSE) at lead_time_days = 7, what is the gain in fill_rate_pct and reduction in stockout_day_share_pct when moving from service_level = 0.90 to service_level = 0.98 for each safety-stock policy, ordered by policy ascending?
+
+**Reference SQL:**
+```sql
+WITH sl90 AS (SELECT policy, fill_rate_pct AS fill_90, stockout_day_share_pct AS stockout_90 FROM sim_policy_summary WHERE is_sensitivity_extrapolation = FALSE AND lead_time_days = 7 AND ROUND(service_level, 2) = 0.90), sl98 AS (SELECT policy, fill_rate_pct AS fill_98, stockout_day_share_pct AS stockout_98 FROM sim_policy_summary WHERE is_sensitivity_extrapolation = FALSE AND lead_time_days = 7 AND ROUND(service_level, 2) = 0.98) SELECT sl98.policy, ROUND(sl98.fill_98 - sl90.fill_90, 2) AS fill_rate_gain_pct, ROUND(sl90.stockout_90 - sl98.stockout_98, 2) AS stockout_reduction_pct FROM sl98 JOIN sl90 ON sl98.policy = sl90.policy ORDER BY sl98.policy ASC
+```
+
+**Expected Result (3 row(s)):**
+
+| policy | fill_rate_gain_pct | stockout_reduction_pct |
+| --- | --- | --- |
+| lightgbm_p50_safety_stock | 0.36 | 1.42 |
+| lightgbm_point_safety_stock | 0.26 | 1.45 |
+| seasonal_naive_safety_stock | 0.51 | 1.12 |
