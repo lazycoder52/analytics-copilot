@@ -1675,6 +1675,354 @@
       ]
     }
   },
+  "heldout_evaluation": {
+    "heldout_set_path": "evals/heldout.jsonl",
+    "review_status": "needs human review",
+    "provider": "openai_compatible",
+    "model": "openai/gpt-oss-120b",
+    "response_model": "openai/gpt-oss-120b",
+    "base_url_host": "api.groq.com",
+    "temperature": 0.0,
+    "run_date": "2026-10-26",
+    "n_total": 10,
+    "n_completed": 10,
+    "n_unresolved": 0,
+    "infrastructure_failures_count": 0,
+    "n_answerable": 10,
+    "n_unanswerable": 0,
+    "primary_config": "full_schema_repair_on",
+    "headline": {
+      "execution_accuracy": 1.0,
+      "execution_correct": 10,
+      "execution_wilson_95_ci": [
+        0.7225,
+        1.0
+      ],
+      "valid_sql_rate": 1.0,
+      "valid_sql_count": 10,
+      "valid_sql_wilson_95_ci": [
+        0.7225,
+        1.0
+      ],
+      "mean_attempts": 1,
+      "latency_p50_ms": 1717.85,
+      "latency_p95_ms": 2771.82,
+      "total_tokens": 35824
+    },
+    "configurations": {
+      "full_schema_repair_on": {
+        "config": "full_schema_repair_on",
+        "description": "Schema with table/column descriptions + bounded self-repair (up to 2 repairs)",
+        "max_repairs": 2,
+        "include_descriptions": true,
+        "n_total": 10,
+        "n_completed": 10,
+        "n_unresolved": 0,
+        "unresolved_questions": [],
+        "infrastructure_failures_count": 0,
+        "infrastructure_failures": [],
+        "n_answerable": 10,
+        "n_unanswerable": 0,
+        "execution_correct": 10,
+        "execution_accuracy": 1.0,
+        "execution_accuracy_wilson_95_ci": [
+          0.7225,
+          1.0
+        ],
+        "valid_sql_count": 10,
+        "valid_sql_rate": 1.0,
+        "valid_sql_wilson_95_ci": [
+          0.7225,
+          1.0
+        ],
+        "refusal_correct": 0,
+        "refusal_accuracy": 0.0,
+        "refusal_wilson_95_ci": [
+          0.0,
+          0.0
+        ],
+        "mean_attempts": 1,
+        "latency_p50_ms": 1717.85,
+        "latency_p95_ms": 2771.82,
+        "total_tokens": 35824,
+        "by_difficulty": {
+          "easy": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": 0.0,
+            "wilson_95_ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "medium": {
+            "correct": 4,
+            "total": 4,
+            "accuracy": 1.0,
+            "wilson_95_ci": [
+              0.5101,
+              1.0
+            ]
+          },
+          "hard": {
+            "correct": 6,
+            "total": 6,
+            "accuracy": 1.0,
+            "wilson_95_ci": [
+              0.6097,
+              1.0
+            ]
+          }
+        },
+        "failure_counts": {
+          "wrong_join_or_aggregation": 0,
+          "wrong_column_semantics": 0,
+          "hallucinated_table_or_column": 0,
+          "syntax_error": 0,
+          "ambiguity": 0,
+          "guard_blocked": 0,
+          "timeout": 0
+        },
+        "failed_questions": []
+      },
+      "full_schema_repair_off": {
+        "config": "full_schema_repair_off",
+        "description": "Schema with table/column descriptions + repair loop disabled (0 repairs)",
+        "max_repairs": 0,
+        "include_descriptions": true,
+        "n_total": 10,
+        "n_completed": 10,
+        "n_unresolved": 0,
+        "unresolved_questions": [],
+        "infrastructure_failures_count": 0,
+        "infrastructure_failures": [],
+        "n_answerable": 10,
+        "n_unanswerable": 0,
+        "execution_correct": 10,
+        "execution_accuracy": 1.0,
+        "execution_accuracy_wilson_95_ci": [
+          0.7225,
+          1.0
+        ],
+        "valid_sql_count": 10,
+        "valid_sql_rate": 1.0,
+        "valid_sql_wilson_95_ci": [
+          0.7225,
+          1.0
+        ],
+        "refusal_correct": 0,
+        "refusal_accuracy": 0.0,
+        "refusal_wilson_95_ci": [
+          0.0,
+          0.0
+        ],
+        "mean_attempts": 1,
+        "latency_p50_ms": 1717.85,
+        "latency_p95_ms": 2771.82,
+        "total_tokens": 35824,
+        "by_difficulty": {
+          "easy": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": 0.0,
+            "wilson_95_ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "medium": {
+            "correct": 4,
+            "total": 4,
+            "accuracy": 1.0,
+            "wilson_95_ci": [
+              0.5101,
+              1.0
+            ]
+          },
+          "hard": {
+            "correct": 6,
+            "total": 6,
+            "accuracy": 1.0,
+            "wilson_95_ci": [
+              0.6097,
+              1.0
+            ]
+          }
+        },
+        "failure_counts": {
+          "wrong_join_or_aggregation": 0,
+          "wrong_column_semantics": 0,
+          "hallucinated_table_or_column": 0,
+          "syntax_error": 0,
+          "ambiguity": 0,
+          "guard_blocked": 0,
+          "timeout": 0
+        },
+        "failed_questions": []
+      },
+      "bare_schema_repair_on": {
+        "config": "bare_schema_repair_on",
+        "description": "Bare schema (table/column names and types only, no descriptions) + repair on",
+        "max_repairs": 2,
+        "include_descriptions": false,
+        "n_total": 10,
+        "n_completed": 10,
+        "n_unresolved": 0,
+        "unresolved_questions": [],
+        "infrastructure_failures_count": 0,
+        "infrastructure_failures": [],
+        "n_answerable": 10,
+        "n_unanswerable": 0,
+        "execution_correct": 7,
+        "execution_accuracy": 0.7,
+        "execution_accuracy_wilson_95_ci": [
+          0.3968,
+          0.8922
+        ],
+        "valid_sql_count": 10,
+        "valid_sql_rate": 1.0,
+        "valid_sql_wilson_95_ci": [
+          0.7225,
+          1.0
+        ],
+        "refusal_correct": 0,
+        "refusal_accuracy": 0.0,
+        "refusal_wilson_95_ci": [
+          0.0,
+          0.0
+        ],
+        "mean_attempts": 1,
+        "latency_p50_ms": 1784.0,
+        "latency_p95_ms": 3104.18,
+        "total_tokens": 18808,
+        "by_difficulty": {
+          "easy": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": 0.0,
+            "wilson_95_ci": [
+              0.0,
+              0.0
+            ]
+          },
+          "medium": {
+            "correct": 3,
+            "total": 4,
+            "accuracy": 0.75,
+            "wilson_95_ci": [
+              0.3006,
+              0.9544
+            ]
+          },
+          "hard": {
+            "correct": 4,
+            "total": 6,
+            "accuracy": 0.6667,
+            "wilson_95_ci": [
+              0.3,
+              0.9032
+            ]
+          }
+        },
+        "failure_counts": {
+          "wrong_join_or_aggregation": 0,
+          "wrong_column_semantics": 3,
+          "hallucinated_table_or_column": 0,
+          "syntax_error": 0,
+          "ambiguity": 0,
+          "guard_blocked": 0,
+          "timeout": 0
+        },
+        "failed_questions": [
+          {
+            "id": "holdout_med_03",
+            "difficulty": "medium",
+            "question": "In perishable_volatility_summary, which 5 cities have the highest average volatility_exposure_index across PERISHABLE series (return city, perishable_series, and avg_volatility_exposure_index)?",
+            "category": "wrong_column_semantics",
+            "generated_sql": "SELECT city, family AS perishable_series, AVG(volatility_exposure_index) AS avg_volatility_exposure_index FROM perishable_volatility_summary WHERE perishability_class = 'PERISHABLE' GROUP BY city, family ORDER BY avg_volatility_exposure_index DESC LIMIT 5",
+            "reference_sql": "SELECT city, COUNT(*) AS perishable_series, ROUND(AVG(volatility_exposure_index), 2) AS avg_volatility_exposure_index FROM perishable_volatility_summary WHERE perishability_class = 'PERISHABLE' GROUP BY city ORDER BY avg_volatility_exposure_index DESC LIMIT 5",
+            "actual_row_preview": [
+              [
+                "Cuenca",
+                "PRODUCE",
+                1029.8200073242188
+              ],
+              [
+                "Daule",
+                "PRODUCE",
+                1444.5799560546875
+              ]
+            ],
+            "expected_row_preview": [
+              [
+                "Quito",
+                144.0,
+                444.03
+              ],
+              [
+                "Cuenca",
+                24.0,
+                306.86
+              ]
+            ],
+            "error": null
+          },
+          {
+            "id": "holdout_hard_04",
+            "difficulty": "hard",
+            "question": "In weekly_store_family_summary, what is the total number of distinct-week non_transferred_holidays in each calendar year from 2013 through 2017, ordered by year ascending?",
+            "category": "wrong_column_semantics",
+            "generated_sql": "WITH week_max AS (SELECT store_nbr, week_start_date, MAX(non_transferred_holidays) AS non_transferred_holidays FROM weekly_store_family_summary GROUP BY store_nbr, week_start_date) SELECT EXTRACT(YEAR FROM week_start_date) AS year, SUM(non_transferred_holidays) AS total_non_transferred_holidays FROM week_max WHERE EXTRACT(YEAR FROM week_start_date) BETWEEN 2013 AND 2017 GROUP BY year ORDER BY year ASC LIMIT 100",
+            "reference_sql": "WITH distinct_weeks AS (SELECT week_start_date, EXTRACT(YEAR FROM week_start_date) AS yr, MAX(non_transferred_holidays) AS wk_holidays FROM weekly_store_family_summary WHERE EXTRACT(YEAR FROM week_start_date) BETWEEN 2013 AND 2017 GROUP BY week_start_date, yr) SELECT yr, SUM(wk_holidays) AS total_non_transferred_holidays FROM distinct_weeks GROUP BY yr ORDER BY yr ASC",
+            "actual_row_preview": [
+              [
+                2013.0,
+                2646.0
+              ],
+              [
+                2014.0,
+                3618.0
+              ]
+            ],
+            "expected_row_preview": [
+              [
+                2013.0,
+                49.0
+              ],
+              [
+                2014.0,
+                67.0
+              ]
+            ],
+            "error": null
+          },
+          {
+            "id": "holdout_hard_05",
+            "difficulty": "hard",
+            "question": "For the HIGH_VOLATILITY_PERISHABLE_PROXY series in perishable_volatility_summary, what is the count of paired series, their combined 2016 unit sales (total_sales from weekly_store_family_summary), and their combined series-level total_sales from zero_sales_day_proxy_summary?",
+            "category": "wrong_column_semantics",
+            "generated_sql": "WITH high_vol AS (SELECT DISTINCT store_nbr, family FROM perishable_volatility_summary WHERE volatility_proxy_tier = 'HIGH_VOLATILITY_PERISHABLE_PROXY') SELECT COUNT(*) AS paired_series_count, COALESCE(SUM(ws.total_sales), 0) AS combined_2016_unit_sales, COALESCE(SUM(z.total_sales), 0) AS combined_zero_sales_proxy_total_sales FROM high_vol AS hv LEFT JOIN weekly_store_family_summary AS ws ON hv.store_nbr = ws.store_nbr AND hv.family = ws.family AND EXTRACT(YEAR FROM ws.week_start_date) = 2016 LEFT JOIN zero_sales_day_proxy_summary AS z ON hv.store_nbr = z.store_nbr AND hv.family = z.family LIMIT 100",
+            "reference_sql": "WITH sales_2016 AS (SELECT store_nbr, family, SUM(total_sales) AS sales_2016 FROM weekly_store_family_summary WHERE EXTRACT(YEAR FROM week_start_date) = 2016 GROUP BY store_nbr, family) SELECT COUNT(*) AS series_count, ROUND(SUM(s.sales_2016), 2) AS sales_2016, ROUND(SUM(z.total_sales), 2) AS all_time_series_sales FROM perishable_volatility_summary v JOIN sales_2016 s ON v.store_nbr = s.store_nbr AND v.family = s.family JOIN zero_sales_day_proxy_summary z ON v.store_nbr = z.store_nbr AND v.family = z.family WHERE v.volatility_proxy_tier = 'HIGH_VOLATILITY_PERISHABLE_PROXY'",
+            "actual_row_preview": [
+              [
+                3172.0,
+                36106464.231451035,
+                5387671085.25293
+              ]
+            ],
+            "expected_row_preview": [
+              [
+                61.0,
+                36106464.23,
+                103609059.33
+              ]
+            ],
+            "error": null
+          }
+        ]
+      }
+    }
+  },
   "secondary_live_runs": [
     {
       "provider": "openai_compatible",

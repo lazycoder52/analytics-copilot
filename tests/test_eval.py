@@ -10,6 +10,7 @@ from copilot.data import load_database
 from copilot.eval import (
     DEFAULT_CONFIGS,
     DEFAULT_GOLD_PATH,
+    DEFAULT_HELDOUT_PATH,
     DEFAULT_METRICS_PATH,
     evaluate_config,
     load_gold_set,
@@ -53,6 +54,24 @@ def test_every_gold_reference_sql_executes_and_matches_expected_rows(con):
         res = execute_guarded_sql(con, item["sql"])
         actual = [list(r) for r in res.rows]
         assert results_match(actual, item["expected_rows"]), f"Mismatch on {item['id']}"
+
+
+def test_heldout_set_structure_and_reference_sql_executes(con):
+    items = load_gold_set(DEFAULT_HELDOUT_PATH)
+    assert len(items) == 10
+    by_diff = {"medium": 0, "hard": 0}
+    review_doc = (DEFAULT_GOLD_PATH.parents[1] / "docs" / "GOLD_REVIEW.md").read_text(
+        encoding="utf-8"
+    )
+    for item in items:
+        assert item["answerable"] is True
+        assert item["review_status"] == "needs human review"
+        by_diff[item["difficulty"]] += 1
+        assert item["id"] in review_doc
+        res = execute_guarded_sql(con, item["sql"])
+        actual = [list(r) for r in res.rows]
+        assert results_match(actual, item["expected_rows"]), f"Mismatch on {item['id']}"
+    assert by_diff == {"medium": 4, "hard": 6}
 
 
 def test_wilson_ci_bounds_and_properties():
