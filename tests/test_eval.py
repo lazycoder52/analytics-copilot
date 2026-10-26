@@ -16,6 +16,7 @@ from copilot.eval import (
     wilson_ci,
 )
 from copilot.guard import execute_guarded_sql
+from copilot.readme_gen import DEFAULT_README_PATH, render_readme
 
 
 @pytest.fixture(scope="module")
@@ -94,4 +95,13 @@ def test_replay_regenerates_committed_metrics_json_identically(tmp_path):
     assert (
         configs["full_schema_repair_on"]["execution_correct"]
         > configs["bare_schema_repair_on"]["execution_correct"]
+    )
+
+
+def test_readme_figures_match_metrics_json():
+    metrics = json.loads(DEFAULT_METRICS_PATH.read_text(encoding="utf-8"))
+    actual_readme = DEFAULT_README_PATH.read_text(encoding="utf-8")
+    expected_readme = render_readme(metrics)
+    assert actual_readme == expected_readme, (
+        "README.md is out of sync with metrics/metrics.json; run `python -m copilot.readme_gen`."
     )
