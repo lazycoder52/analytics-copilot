@@ -6,8 +6,9 @@ import json
 from pathlib import Path
 from typing import Any
 
-DEFAULT_METRICS_PATH = Path(__file__).resolve().parents[2] / "metrics" / "metrics.json"
-DEFAULT_README_PATH = Path(__file__).resolve().parents[2] / "README.md"
+REPO_ROOT = Path(__file__).resolve().parents[2]
+DEFAULT_METRICS_PATH = REPO_ROOT / "metrics" / "metrics.json"
+DEFAULT_README_PATH = REPO_ROOT / "README.md"
 
 
 def _fmt_pct(val: float) -> str:
@@ -803,7 +804,9 @@ def main() -> int:
     metrics = json.loads(DEFAULT_METRICS_PATH.read_text(encoding="utf-8"))
     readme_text = render_readme(metrics)
     DEFAULT_README_PATH.write_text(readme_text, encoding="utf-8")
-    print(f"Updated {DEFAULT_README_PATH} from {DEFAULT_METRICS_PATH}")
+    rel_readme = DEFAULT_README_PATH.relative_to(REPO_ROOT).as_posix()
+    rel_metrics = DEFAULT_METRICS_PATH.relative_to(REPO_ROOT).as_posix()
+    print(f"Updated {rel_readme} from {rel_metrics}")
     return 0
 
 
