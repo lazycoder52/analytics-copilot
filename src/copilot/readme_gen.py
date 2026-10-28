@@ -483,6 +483,8 @@ def render_readme(metrics: dict[str, Any]) -> str:
         "(Corporación Favorita grocery store sales across 54 stores and 33 product families",
         "in Ecuador).",
         "",
+        "Data source: [grocery-demand-planner](https://github.com/lazycoder52/grocery-demand-planner)",
+        "",
         *_render_eval_status_block(metrics),
         "",
         "## Problem",
