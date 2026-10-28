@@ -53,6 +53,7 @@ from copilot.providers import (
 DEFAULT_GOLD_PATH = Path(__file__).resolve().parents[2] / "evals" / "gold.jsonl"
 DEFAULT_HELDOUT_PATH = Path(__file__).resolve().parents[2] / "evals" / "heldout.jsonl"
 DEFAULT_METRICS_PATH = Path(__file__).resolve().parents[2] / "metrics" / "metrics.json"
+DEFAULT_VERDICTS_PATH = Path(__file__).resolve().parents[2] / "evals" / "review_verdicts.json"
 
 FAILURE_CATEGORIES: tuple[str, ...] = (
     "wrong_join_or_aggregation",
@@ -640,6 +641,8 @@ def evaluate_config(
     valid_sql_count = 0
     n_ans_eval = 0
     n_unans_eval = 0
+    passed_ids: set[str] = set()
+    ans_evaluated_ids: set[str] = set()
 
     by_diff_total: dict[str, int] = {"easy": 0, "medium": 0, "hard": 0}
     by_diff_correct: dict[str, int] = {"easy": 0, "medium": 0, "hard": 0}
@@ -687,6 +690,7 @@ def evaluate_config(
 
         if item["answerable"]:
             n_ans_eval += 1
+            ans_evaluated_ids.add(item["id"])
             diff = item["difficulty"]
             by_diff_total[diff] = by_diff_total.get(diff, 0) + 1
             if res.status == "ok":
@@ -694,6 +698,7 @@ def evaluate_config(
                 actual_rows = [list(r) for r in res.rows]
                 if results_match(actual_rows, item["expected_rows"]):
                     exec_correct += 1
+                    passed_ids.add(item["id"])
                     by_diff_correct[diff] = by_diff_correct.get(diff, 0) + 1
                 else:
                     cat = _classify_failure(
@@ -790,7 +795,24 @@ def evaluate_config(
         det_latencies = [round(10.0 + 4.5 * a, 2) for a in attempts_list]
         sorted_lat = sorted(det_latencies)
 
-    return {
+    reviewed_exec_acc: float | None = None
+    if (
+        provider.model_name == "openai/gpt-oss-120b"
+        and config.name == "full_schema_repair_on"
+        and len(gold_items) == 45
+        and DEFAULT_VERDICTS_PATH.is_file()
+    ):
+        try:
+            vdata = json.loads(DEFAULT_VERDICTS_PATH.read_text(encoding="utf-8"))
+            model_correct_ids = {v["id"] for v in vdata if v.get("verdict") == "Model correct"}
+            reviewed_passed_ids = set(passed_ids) | (model_correct_ids & ans_evaluated_ids)
+            reviewed_exec_acc = (
+                round(len(reviewed_passed_ids) / n_ans_eval, 4) if n_ans_eval else 0.0
+            )
+        except Exception:
+            pass
+
+    out: dict[str, Any] = {
         "config": config.name,
         "description": config.description,
         "max_repairs": config.max_repairs,
@@ -808,21 +830,28 @@ def evaluate_config(
         "n_unanswerable": n_unans_eval,
         "execution_correct": exec_correct,
         "execution_accuracy": exec_acc,
-        "execution_accuracy_wilson_95_ci": list(exec_ci),
-        "valid_sql_count": valid_sql_count,
-        "valid_sql_rate": valid_rate,
-        "valid_sql_wilson_95_ci": list(valid_ci),
-        "refusal_correct": refusal_correct,
-        "refusal_accuracy": refusal_acc,
-        "refusal_wilson_95_ci": list(refusal_ci),
-        "mean_attempts": round(statistics.mean(attempts_list), 3) if attempts_list else 0.0,
-        "latency_p50_ms": _percentile(sorted_lat, 0.50),
-        "latency_p95_ms": _percentile(sorted_lat, 0.95),
-        "total_tokens": total_tokens_sum if has_tokens else None,
-        "by_difficulty": tier_metrics,
-        "failure_counts": failure_counts,
-        "failed_questions": failed_examples,
     }
+    if reviewed_exec_acc is not None:
+        out["reviewed_execution_accuracy"] = reviewed_exec_acc
+    out.update(
+        {
+            "execution_accuracy_wilson_95_ci": list(exec_ci),
+            "valid_sql_count": valid_sql_count,
+            "valid_sql_rate": valid_rate,
+            "valid_sql_wilson_95_ci": list(valid_ci),
+            "refusal_correct": refusal_correct,
+            "refusal_accuracy": refusal_acc,
+            "refusal_wilson_95_ci": list(refusal_ci),
+            "mean_attempts": round(statistics.mean(attempts_list), 3) if attempts_list else 0.0,
+            "latency_p50_ms": _percentile(sorted_lat, 0.50),
+            "latency_p95_ms": _percentile(sorted_lat, 0.95),
+            "total_tokens": total_tokens_sum if has_tokens else None,
+            "by_difficulty": tier_metrics,
+            "failure_counts": failure_counts,
+            "failed_questions": failed_examples,
+        }
+    )
+    return out
 
 
 def _evaluate_secondary_cached_run(
