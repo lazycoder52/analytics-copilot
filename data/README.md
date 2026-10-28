@@ -37,10 +37,6 @@ not loaded, is not described in the prompt catalog and is not queryable.
 For a public version of this repository, omit the file, or regenerate it from raw data with
 the grocery-demand-planner pipeline (`python -m demand_planner.pipeline --stages models`).
 
-## Kaggle rules caveat
+## Kaggle rules
 
-Data from Kaggle competitions is distributed under that competition's rules, which can
-restrict redistribution of the raw data and of material derived from it. The files here are
-aggregates and model outputs, but `weekly_store_family_summary.parquet` is still fine-grained
-(per store, family and week). Re-check the competition Rules tab before making this
-repository public. The repository is currently private.
+Data from the Kaggle competition [Store Sales - Time Series Forecasting](https://www.kaggle.com/competitions/store-sales-time-series-forecasting) is subject to its competition rules. Section 7 of the competition rules permits non-commercial and academic use of the Competition Data and restricts redistribution. These files are aggregated derivatives published by the author for non-commercial educational purposes and will be removed on request.

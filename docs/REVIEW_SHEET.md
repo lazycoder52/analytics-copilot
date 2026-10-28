@@ -1,4 +1,4 @@
-Reviewed by: ____ Date: ____ Count: ____
+Human verification by: Aditya S Arakali  Date: 2026-10-28  Count: 15 (14 Model correct, 1 Reference correct)
 
 ## Question med_04: Which 5 store-family series in promo_elasticity_summary have the highest empirical_promo_lift_pct?
 
@@ -33,9 +33,9 @@ SELECT store_nbr, city, state, store_type, store_cluster, family, empirical_prom
 ### Difference
 Model includes unrequested dimension columns (city, state, store_type, store_cluster) and omits rounding on empirical_promo_lift_pct.
 
-Reviewer verdict: ____
+Reviewer verdict: Model correct
 
-Notes: ____
+Notes: The top five series and their ranking match. Extra store/location fields and unrounded values do not change the answer to the plain-English question.
 
 ---
 
@@ -72,9 +72,9 @@ SELECT family, AVG(empirical_promo_lift_pct) AS avg_empirical_promo_lift_pct FRO
 ### Difference
 Model omits the requested series count (n_series) column and omits rounding on avg_empirical_promo_lift_pct.
 
-Reviewer verdict: ____
+Reviewer verdict: Model correct
 
-Notes: ____
+Notes: The same five families and averages are returned in the same ranking. The prompt does not require displaying n_series; the extra precision does not change the substantive answer.
 
 ---
 
@@ -111,9 +111,9 @@ SELECT store_nbr, city, state, family, zero_sales_rate_pct FROM zero_sales_day_p
 ### Difference
 Model includes state column, omits secondary sort by mean_daily_sales, and omits rounding.
 
-Reviewer verdict: ____
+Reviewer verdict: Model correct
 
-Notes: ____
+Notes: The same five series are returned in the same order. The displayed zero_sales_rate_pct values are distinct, so omitting the secondary mean_daily_sales sort does not change these results.
 
 ---
 
@@ -146,9 +146,9 @@ SELECT volatility_proxy_tier, AVG(cv_demand) AS avg_cv_demand, COUNT(*) AS serie
 ### Difference
 Model projects columns in different order (avg_cv_demand before series_count) and omits rounding on avg_cv_demand.
 
-Reviewer verdict: ____
+Reviewer verdict: Model correct
 
-Notes: ____
+Notes: Both requested measures are present and match. The question does not specify row order or rounding, so the different column order and greater numeric precision are harmless.
 
 ---
 
@@ -191,9 +191,9 @@ SELECT family, AVG(cv_demand) AS avg_cv_demand FROM perishable_volatility_summar
 ### Difference
 Model omits the store count (n_stores) column and omits rounding on avg_cv_demand.
 
-Reviewer verdict: ____
+Reviewer verdict: Model correct
 
-Notes: ____
+Notes: The family averages and descending ranking match. The question asks for average cv_demand, not a displayed store count.
 
 ---
 
@@ -236,9 +236,9 @@ SELECT * FROM sim_policy_summary WHERE lead_time_days = 7 AND fill_rate_pct >= 9
 ### Difference
 Model selects all columns (SELECT *) instead of projecting only the requested policy and performance metrics.
 
-Reviewer verdict: ____
+Reviewer verdict: Model correct
 
-Notes: ____
+Notes: The qualifying rows and ascending inventory order match. SELECT * adds columns but still answers which rows qualify; the provided result shows no qualifying sensitivity-extrapolation rows.
 
 ---
 
@@ -275,9 +275,9 @@ WITH weekly_tx AS (SELECT store_nbr, week_start_date, MAX(weekly_transactions) A
 ### Difference
 Model groups only by store_nbr omitting city from the projection and grouping.
 
-Reviewer verdict: ____
+Reviewer verdict: Model correct
 
-Notes: ____
+Notes: Both queries deduplicate the store-week transaction value with MAX before summing, avoiding family-level double counting. Store number identifies each store in the shown results, so omitting city does not change the ranking or totals.
 
 ---
 
@@ -314,9 +314,9 @@ WITH store_sales AS (SELECT store_type, store_nbr, SUM(total_sales) AS total_sal
 ### Difference
 Model omits city column from the projection and intermediate CTE.
 
-Reviewer verdict: ____
+Reviewer verdict: Model correct
 
-Notes: ____
+Notes: The winning store in each store_type and each total match. City is supplemental because store_nbr identifies the store; the difference in rounding is presentational. Confirm that total_sales is the intended measure for the prompt’s phrase “unit sales.”
 
 ---
 
@@ -347,9 +347,9 @@ SELECT pvs.volatility_proxy_tier, AVG(pes.empirical_promo_lift_pct) AS avg_empir
 ### Difference
 Model orders by volatility_proxy_tier instead of avg_cv_demand DESC and omits paired_series count.
 
-Reviewer verdict: ____
+Reviewer verdict: Model correct
 
-Notes: ____
+Notes: The two averages match. paired_series is useful context but is not explicitly requested, and the question does not specify a sort order.
 
 ---
 
@@ -386,9 +386,9 @@ SELECT z.store_nbr, z.city, z.family, z.zero_sales_rate_pct FROM zero_sales_day_
 ### Difference
 Model omits the cv_demand column from projection and secondary sort order.
 
-Reviewer verdict: ____
+Reviewer verdict: Model correct
 
-Notes: ____
+Notes: The same five series are returned in the same order. cv_demand and its secondary sort are not required by the wording; the shown zero_sales_rate_pct values are distinct.
 
 ---
 
@@ -418,9 +418,9 @@ WITH yearly_sales AS (SELECT CAST(EXTRACT(YEAR FROM week_start_date) AS INT) AS 
 ### Difference
 Model selects intermediate columns (total_sales, prev_year_sales) and contains a filter syntax error (year IN (2015, 6)).
 
-Reviewer verdict: ____
+Reviewer verdict: Reference correct
 
-Notes: ____
+Notes: The model filters on year IN (2015, 6), which excludes 2016. Also, filtering the yearly rows before applying LAG leaves 2015 without its 2014 predecessor, so it cannot calculate the requested comparisons. Clarify whether total_sales represents units or monetary sales.
 
 ---
 
@@ -451,9 +451,9 @@ WITH weekly_chain AS (SELECT week_start_date, MAX(avg_oil_price) AS avg_oil_pric
 ### Difference
 Model outputs lowercase regime labels (below_50 / 50_or_above) instead of UPPERCASE (UNDER_50 / AT_OR_ABOVE_50) and unrounded sales.
 
-Reviewer verdict: ____
+Reviewer verdict: Model correct
 
-Notes: ____
+Notes: The shown weekly counts and averages match. The label wording/case and extra precision are harmless here. MAX(avg_oil_price) agrees with AVG only if oil price is constant within each week; adding an explicit non-NULL oil-price filter would make the intended regime definition more robust. Confirm that total_sales is the intended measure for “unit sales.”
 
 ---
 
@@ -482,9 +482,9 @@ SELECT COUNT(*) AS total_rows FROM weekly_store_family_summary LIMIT 100
 ### Difference
 Model SQL matches reference query semantics and returns identical single-value result.
 
-Reviewer verdict: ____
+Reviewer verdict: Model correct
 
-Notes: ____
+Notes: The count and query semantics match exactly; the output alias and LIMIT do not change this aggregate result.
 
 ---
 
@@ -513,9 +513,9 @@ SELECT COUNT(DISTINCT store_nbr) AS distinct_store_count FROM weekly_store_famil
 ### Difference
 Model SQL matches reference query semantics and returns identical single-value result.
 
-Reviewer verdict: ____
+Reviewer verdict: Model correct
 
-Notes: ____
+Notes: COUNT(DISTINCT store_nbr) correctly returns 54. The alias and LIMIT are harmless.
 
 ---
 
@@ -544,8 +544,11 @@ SELECT COUNT(DISTINCT family) AS distinct_families FROM weekly_store_family_summ
 ### Difference
 Model SQL matches reference query semantics and returns identical single-value result.
 
-Reviewer verdict: ____
+Reviewer verdict: Model correct
 
-Notes: ____
+Notes: COUNT(DISTINCT family) correctly returns 33. The alias and LIMIT are harmless.
 
 ---
+
+## Overall uncertainty note
+The sheet does not define whether `total_sales` is a unit measure or a monetary measure, so confirm that terminology for hard_02, hard_07, and hard_08. In hard_08, the shown results match, but `MAX(avg_oil_price)` is equivalent to `AVG(avg_oil_price)` only if the oil price is constant within each week; explicitly excluding NULL oil-price weeks would make the regime logic clearer.

@@ -58,6 +58,7 @@
       "n_unanswerable": 5,
       "execution_correct": 28,
       "execution_accuracy": 0.7,
+      "reviewed_execution_accuracy": 0.975,
       "execution_accuracy_wilson_95_ci": [
         0.5457,
         0.8193

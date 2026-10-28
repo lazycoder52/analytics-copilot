@@ -9,6 +9,45 @@ from typing import Any
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_METRICS_PATH = REPO_ROOT / "metrics" / "metrics.json"
 DEFAULT_README_PATH = REPO_ROOT / "README.md"
+DEFAULT_VERDICTS_PATH = REPO_ROOT / "evals" / "review_verdicts.json"
+
+
+def _load_review_data(n_ans: int, c_on: dict[str, Any]) -> tuple[str, str, int, float] | None:
+    if not DEFAULT_VERDICTS_PATH.is_file():
+        return None
+    try:
+        verdicts = json.loads(DEFAULT_VERDICTS_PATH.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    verdict_by_id = {v["id"]: v.get("verdict") for v in verdicts}
+    reviewed_count = len(verdict_by_id)
+    unreviewed_count = n_ans - reviewed_count
+
+    failed_list = c_on.get("failed_questions", [])
+    total_failures = len(failed_list)
+    model_correct_failures = sum(
+        1 for fq in failed_list if verdict_by_id.get(fq["id"]) == "Model correct"
+    )
+    genuine_errors = [
+        fq["id"] for fq in failed_list if verdict_by_id.get(fq["id"]) != "Model correct"
+    ]
+    genuine_error_count = len(genuine_errors)
+    genuine_error_str = ", ".join(genuine_errors)
+
+    review_sentence = (
+        "Strict scoring penalises column projection and order; "
+        f"{model_correct_failures} of the {total_failures} failures were result-identical "
+        "queries with different columns, "
+        f"{genuine_error_count} was a genuine error ({genuine_error_str})."
+    )
+    coverage_sentence = (
+        f"{reviewed_count} of {n_ans} gold questions were reviewed by me and the other "
+        f"{unreviewed_count} were not."
+    )
+    strict_correct = c_on["execution_correct"]
+    reviewed_correct = strict_correct + model_correct_failures
+    reviewed_acc = c_on.get("reviewed_execution_accuracy", round(reviewed_correct / n_ans, 4))
+    return review_sentence, coverage_sentence, reviewed_correct, reviewed_acc
 
 
 def _fmt_pct(val: float) -> str:
@@ -28,7 +67,15 @@ def _cfg_row(cfg: dict[str, Any], label: str) -> str:
         return " | ".join(["|" + f" {name}", label, inc_str, "n/a", "n/a", "n/a", "n/a", "n/a |"])
     n_ans = cfg["n_answerable"]
     n_unans = cfg["n_unanswerable"]
-    exec_str = f"{cfg['execution_correct']}/{n_ans} ({_fmt_pct(cfg['execution_accuracy'])})"
+    if "reviewed_execution_accuracy" in cfg:
+        reviewed_acc = cfg["reviewed_execution_accuracy"]
+        reviewed_correct = round(reviewed_acc * n_ans)
+        exec_str = (
+            f"{cfg['execution_correct']}/{n_ans} ({_fmt_pct(cfg['execution_accuracy'])}) strict / "
+            f"{reviewed_correct}/{n_ans} ({_fmt_pct(reviewed_acc)}) reviewed"
+        )
+    else:
+        exec_str = f"{cfg['execution_correct']}/{n_ans} ({_fmt_pct(cfg['execution_accuracy'])})"
     ci_str = f"`{_fmt_ci(cfg['execution_accuracy_wilson_95_ci'])}`"
     val_str = f"{cfg['valid_sql_count']}/{n_ans} ({_fmt_pct(cfg['valid_sql_rate'])})"
     ref_str = f"{cfg['refusal_correct']}/{n_unans} ({_fmt_pct(cfg['refusal_accuracy'])})"
@@ -88,13 +135,29 @@ def _render_eval_status_block(metrics: dict[str, Any]) -> list[str]:
             ]
         )
     else:
-        lines.extend(
-            [
-                "- **Interpretation**: Primary headline and ablation metrics come from recorded",
-                f"  live LLM calls against `{host}` (`{response_model}`) replayed",
-                f"  deterministically from `{cache_file}`.",
-            ]
-        )
+        status_interp = [
+            "- **Interpretation**: Primary headline and ablation metrics come from recorded",
+            f"  live LLM calls against `{host}` (`{response_model}`) replayed",
+            f"  deterministically from `{cache_file}`.",
+        ]
+        hl = metrics.get("headline", {})
+        n_ans = metrics.get("n_answerable", 40)
+        c_on = metrics.get("configurations", {}).get("full_schema_repair_on", {})
+        review_data = _load_review_data(n_ans, c_on)
+        if review_data is not None and "execution_accuracy" in hl:
+            rev_sent, cov_sent, rev_corr, rev_acc = review_data
+            status_interp.extend(
+                [
+                    (
+                        "  Strict execution accuracy is "
+                        f"**{hl['execution_correct']}/{n_ans} "
+                        f"({_fmt_pct(hl['execution_accuracy'])})** vs. "
+                        f"**{rev_corr}/{n_ans} ({_fmt_pct(rev_acc)})** reviewed. "
+                        f"{rev_sent} {cov_sent}"
+                    ),
+                ]
+            )
+        lines.extend(status_interp)
     for sec in metrics.get("secondary_live_runs", []):
         sec_hl = sec["headline"]
         sec_cfgs = sec.get("configurations", {})
@@ -207,6 +270,16 @@ def _render_multi_provider_section(metrics: dict[str, Any]) -> list[str]:
     hl = metrics["headline"]
     n_ans = metrics["n_answerable"]
     n_unans = metrics["n_unanswerable"]
+    c_on = metrics.get("configurations", {}).get("full_schema_repair_on", {})
+    if "reviewed_execution_accuracy" in c_on:
+        r_acc = c_on["reviewed_execution_accuracy"]
+        r_corr = round(r_acc * n_ans)
+        live_a_exec = (
+            f"{hl['execution_correct']}/{n_ans} ({_fmt_pct(hl['execution_accuracy'])}) strict / "
+            f"{r_corr}/{n_ans} ({_fmt_pct(r_acc)}) reviewed"
+        )
+    else:
+        live_a_exec = f"{hl['execution_correct']}/{n_ans} ({_fmt_pct(hl['execution_accuracy'])})"
     rows = [
         "### Multi-Provider & Harness Comparison",
         "",
@@ -221,7 +294,7 @@ def _render_multi_provider_section(metrics: dict[str, Any]) -> list[str]:
             f"| `{metrics.get('response_model', metrics['model'])}` "
             f"| `{metrics.get('base_url_host', 'local-mock')}` | `full_schema_repair_on` "
             f"| {metrics.get('n_completed', metrics['n_total'])}/{metrics['n_total']} "
-            f"| {hl['execution_correct']}/{n_ans} ({_fmt_pct(hl['execution_accuracy'])}) "
+            f"| {live_a_exec} "
             f"| `{_fmt_ci(hl['execution_wilson_95_ci'])}` "
             f"| {hl['valid_sql_count']}/{n_ans} ({_fmt_pct(hl['valid_sql_rate'])}) "
             f"| {hl['refusal_correct']}/{n_unans} ({_fmt_pct(hl['refusal_accuracy'])}) "
@@ -462,7 +535,14 @@ def render_readme(metrics: dict[str, Any]) -> str:
     else:
         example_lines.append("No failed questions in `full_schema_repair_on`.")
 
-    exec_val = f"**{hl['execution_correct']}/{n_ans} ({_fmt_pct(hl['execution_accuracy'])})**"
+    review_data = _load_review_data(n_ans, c_on)
+    if review_data is not None:
+        rev_sent, cov_sent, rev_corr, rev_acc = review_data
+        strict_fmt = f"{hl['execution_correct']}/{n_ans} ({_fmt_pct(hl['execution_accuracy'])})"
+        rev_fmt = f"{rev_corr}/{n_ans} ({_fmt_pct(rev_acc)})"
+        exec_val = f"**{strict_fmt}** strict / **{rev_fmt}** reviewed"
+    else:
+        exec_val = f"**{hl['execution_correct']}/{n_ans} ({_fmt_pct(hl['execution_accuracy'])})**"
     exec_ci = f"`{_fmt_ci(hl['execution_wilson_95_ci'])}`"
     val_val = f"**{hl['valid_sql_count']}/{n_ans} ({_fmt_pct(hl['valid_sql_rate'])})**"
     val_ci = f"`{_fmt_ci(hl['valid_sql_wilson_95_ci'])}`"
@@ -603,6 +683,14 @@ def render_readme(metrics: dict[str, Any]) -> str:
             "| Sum of prompt and completion tokens across all evaluated questions |"
         ),
         "",
+        *(
+            [
+                f"> **Review note**: {rev_sent} {cov_sent}",
+                "",
+            ]
+            if review_data is not None
+            else []
+        ),
         *_render_multi_provider_section(metrics),
         f"### Configuration & Ablation Comparison (`{provider}` / `{response_model}`)",
         "",
@@ -644,13 +732,23 @@ def render_readme(metrics: dict[str, Any]) -> str:
         "",
         "*Note on `full_schema_repair_on` vs. `full_schema_repair_off` and sample size",
         f"($N = 40$ answerable, $N = 5$ unanswerable)*: In Run A (`{response_model}`),",
-        f"`full_schema_repair_on` ({_fmt_pct(c_on['execution_accuracy'])}, 95% Wilson CI",
-        f"`{_fmt_ci(c_on['execution_accuracy_wilson_95_ci'])}`) and `full_schema_repair_off`",
-        f"({_fmt_pct(c_off['execution_accuracy'])}, CI",
-        f"`{_fmt_ci(c_off['execution_accuracy_wilson_95_ci'])}`) are identical because all",
+        (
+            f"`full_schema_repair_on` achieves {_fmt_pct(c_on['execution_accuracy'])} strict "
+            + (f"({_fmt_pct(rev_acc)} reviewed; " if review_data is not None else "(")
+            + f"95% Wilson CI `{_fmt_ci(c_on['execution_accuracy_wilson_95_ci'])}`) and "
+            f"`full_schema_repair_off`"
+        ),
+        (
+            f"achieves {_fmt_pct(c_off['execution_accuracy'])} (CI "
+            f"`{_fmt_ci(c_off['execution_accuracy_wilson_95_ci'])}`). Under strict scoring, "
+            "both are identical because all"
+        ),
         "first-attempt queries were syntactically valid and guard-compliant",
-        f"(`valid_sql_rate = {_fmt_pct(c_off['valid_sql_rate'])}`), meaning every failure was a",
-        "silent semantic or grain error that executed without raising a DuckDB/guard exception.",
+        (
+            f"(`valid_sql_rate = {_fmt_pct(c_off['valid_sql_rate'])}`), "
+            "so the execution repair loop was not invoked."
+        ),
+        *([f"{rev_sent} {cov_sent}"] if review_data is not None else []),
         f"`bare_schema_repair_on` drops to {_fmt_pct(c_bare['execution_accuracy'])} (CI",
         f"`{_fmt_ci(c_bare['execution_accuracy_wilson_95_ci'])}`) when column descriptions are",
         "removed. Because the 95% Wilson confidence intervals overlap at $N = 40$, we report",
@@ -769,6 +867,22 @@ def render_readme(metrics: dict[str, Any]) -> str:
         "- `GET http://127.0.0.1:8000/schema` — table and column descriptions with live types.",
         '- `POST http://127.0.0.1:8000/ask` — JSON body `{"question": "...", "max_repairs": 2}`.',
         "- `GET http://127.0.0.1:8000/docs` — interactive OpenAPI / Swagger UI.",
+        "",
+        "## Data Source & Kaggle Rules",
+        "",
+        "The underlying retail data is derived from the Kaggle competition",
+        (
+            "[Store Sales - Time Series Forecasting]"
+            "(https://www.kaggle.com/competitions/store-sales-time-series-forecasting) "
+            "(Corporación Favorita grocery store sales across 54 stores and 33 product "
+            "families in Ecuador)."
+        ),
+        (
+            "Section 7 of the competition rules permits non-commercial and academic use of "
+            "the Competition Data and restricts redistribution. These files are aggregated "
+            "derivatives published by the author for non-commercial educational purposes and "
+            "will be removed on request."
+        ),
         "",
         "## Limitations",
         "",

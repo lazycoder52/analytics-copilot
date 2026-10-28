@@ -1,0 +1,92 @@
+[
+  {
+    "id": "med_04",
+    "verdict": "Model correct",
+    "reviewer": "human, Aditya S Arakali",
+    "date": "2026-10-28"
+  },
+  {
+    "id": "med_05",
+    "verdict": "Model correct",
+    "reviewer": "human, Aditya S Arakali",
+    "date": "2026-10-28"
+  },
+  {
+    "id": "med_07",
+    "verdict": "Model correct",
+    "reviewer": "human, Aditya S Arakali",
+    "date": "2026-10-28"
+  },
+  {
+    "id": "med_08",
+    "verdict": "Model correct",
+    "reviewer": "human, Aditya S Arakali",
+    "date": "2026-10-28"
+  },
+  {
+    "id": "med_09",
+    "verdict": "Model correct",
+    "reviewer": "human, Aditya S Arakali",
+    "date": "2026-10-28"
+  },
+  {
+    "id": "med_12",
+    "verdict": "Model correct",
+    "reviewer": "human, Aditya S Arakali",
+    "date": "2026-10-28"
+  },
+  {
+    "id": "hard_01",
+    "verdict": "Model correct",
+    "reviewer": "human, Aditya S Arakali",
+    "date": "2026-10-28"
+  },
+  {
+    "id": "hard_02",
+    "verdict": "Model correct",
+    "reviewer": "human, Aditya S Arakali",
+    "date": "2026-10-28"
+  },
+  {
+    "id": "hard_03",
+    "verdict": "Model correct",
+    "reviewer": "human, Aditya S Arakali",
+    "date": "2026-10-28"
+  },
+  {
+    "id": "hard_04",
+    "verdict": "Model correct",
+    "reviewer": "human, Aditya S Arakali",
+    "date": "2026-10-28"
+  },
+  {
+    "id": "hard_07",
+    "verdict": "Reference correct",
+    "reviewer": "human, Aditya S Arakali",
+    "date": "2026-10-28"
+  },
+  {
+    "id": "hard_08",
+    "verdict": "Model correct",
+    "reviewer": "human, Aditya S Arakali",
+    "date": "2026-10-28"
+  },
+  {
+    "id": "easy_01",
+    "verdict": "Model correct",
+    "reviewer": "human, Aditya S Arakali",
+    "date": "2026-10-28"
+  },
+  {
+    "id": "easy_02",
+    "verdict": "Model correct",
+    "reviewer": "human, Aditya S Arakali",
+    "date": "2026-10-28"
+  },
+  {
+    "id": "easy_03",
+    "verdict": "Model correct",
+    "reviewer": "human, Aditya S Arakali",
+    "date": "2026-10-28"
+  }
+]
