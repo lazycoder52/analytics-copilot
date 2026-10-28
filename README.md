@@ -6,6 +6,8 @@ over tracked Parquet aggregates derived from the
 (Corporación Favorita grocery store sales across 54 stores and 33 product families
 in Ecuador).
 
+Data source: [grocery-demand-planner](https://github.com/lazycoder52/grocery-demand-planner)
+
 ## Evaluation status
 
 - **Primary provider in `metrics/metrics.json` (Run A)**: `openai_compatible` (requested model `openai/gpt-oss-120b`, API-returned model `openai/gpt-oss-120b`, endpoint host `api.groq.com`, `temperature=0.0`, `run_date=2026-10-26`, cached in `evals/cache/openai_compatible_openai_gpt-oss-120b.jsonl`).
