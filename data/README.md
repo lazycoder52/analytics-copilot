@@ -34,8 +34,8 @@ closer to the raw competition data than the other files. The loader and all test
 without it, and the evaluation gold set does not use it. If the file is absent, the table is
 not loaded, is not described in the prompt catalog and is not queryable.
 
-For a public version of this repository, omit the file, or regenerate it from raw data with
-the grocery-demand-planner pipeline (`python -m demand_planner.pipeline --stages models`).
+It can be regenerated from raw data with the grocery-demand-planner pipeline
+(`python -m demand_planner.pipeline --stages models`).
 
 ## Kaggle rules
 
