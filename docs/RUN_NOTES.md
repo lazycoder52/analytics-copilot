@@ -91,3 +91,16 @@
      `git filter-branch` rewrite across `--all` (backed up to local tag `pre-rewrite` before
      removing `refs/original/*` and `pre-rewrite` so `git log --all --format=%ae | sort -u`
      outputs exclusively `214386450+lazycoder52@users.noreply.github.com`).
+
+7. **Gateway & Rate-Limit Summary**:
+   - Anonymous free gateways (`text.pollinations.ai/openai` and `api.llm7.io/v1` with alias
+     `openai-fast`) were probed during early evaluation:
+     - `api.llm7.io` returned `HTTP 400 model_unavailable`, with anonymous unauthenticated
+       requests hitting the shared IP daily token cap (`HTTP 429: Daily token quota exceeded.
+       Retry after 85355 seconds`).
+     - `text.pollinations.ai` enforced a 1 req/30s IP throttle (`HTTP 402 FREE_LIMIT`). After
+       evaluating 31/45 questions, the partial cache was discarded due to excessive latency in
+       favor of direct authenticated calls to `openai/gpt-oss-20b` on `api.groq.com`.
+     - Gateway aliases like `openai-fast` are subject to upstream routing shifts and rate caps,
+       so all official benchmark runs are pinned to direct API endpoints (`api.groq.com`) with
+       deterministic caching in `evals/cache/*.jsonl`.
