@@ -56,6 +56,7 @@ DEFAULT_METRICS_PATH = Path(__file__).resolve().parents[2] / "metrics" / "metric
 DEFAULT_VERDICTS_PATH = Path(__file__).resolve().parents[2] / "evals" / "review_verdicts.json"
 
 FAILURE_CATEGORIES: tuple[str, ...] = (
+    "projection_mismatch",
     "wrong_join_or_aggregation",
     "wrong_column_semantics",
     "hallucinated_table_or_column",
@@ -604,6 +605,15 @@ def _classify_failure(
             return _PERSISTENT_FAILURES_FULL_SCHEMA[qid][0]
         if not has_descriptions and qid in _BARE_SCHEMA_EXTRA_FAILURES:
             return _BARE_SCHEMA_EXTRA_FAILURES[qid][0]
+
+    if has_descriptions and DEFAULT_VERDICTS_PATH.is_file():
+        try:
+            vdata = json.loads(DEFAULT_VERDICTS_PATH.read_text(encoding="utf-8"))
+            model_correct_ids = {v["id"] for v in vdata if v.get("verdict") == "Model correct"}
+            if qid in model_correct_ids:
+                return "projection_mismatch"
+        except Exception:
+            pass
 
     gen = (generated_sql or "").lower()
     ref = (item.get("sql") or "").lower()

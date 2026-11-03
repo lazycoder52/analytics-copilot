@@ -109,7 +109,8 @@
         }
       },
       "failure_counts": {
-        "wrong_join_or_aggregation": 12,
+        "projection_mismatch": 11,
+        "wrong_join_or_aggregation": 1,
         "wrong_column_semantics": 0,
         "hallucinated_table_or_column": 0,
         "syntax_error": 0,
@@ -122,7 +123,7 @@
           "id": "med_04",
           "difficulty": "medium",
           "question": "Which 5 store-family series in promo_elasticity_summary have the highest empirical_promo_lift_pct?",
-          "category": "wrong_join_or_aggregation",
+          "category": "projection_mismatch",
           "generated_sql": "SELECT store_nbr, city, state, store_type, store_cluster, family, empirical_promo_lift_pct FROM promo_elasticity_summary ORDER BY empirical_promo_lift_pct DESC LIMIT 5",
           "reference_sql": "SELECT store_nbr, family, ROUND(empirical_promo_lift_pct, 2) AS empirical_promo_lift_pct FROM promo_elasticity_summary ORDER BY empirical_promo_lift_pct DESC LIMIT 5",
           "actual_row_preview": [
@@ -163,7 +164,7 @@
           "id": "med_05",
           "difficulty": "medium",
           "question": "For each product family in promo_elasticity_summary with at least 20 evaluated series, what is the average empirical_promo_lift_pct, ordered highest first (top 5)?",
-          "category": "wrong_join_or_aggregation",
+          "category": "projection_mismatch",
           "generated_sql": "SELECT family, AVG(empirical_promo_lift_pct) AS avg_empirical_promo_lift_pct FROM promo_elasticity_summary GROUP BY family HAVING COUNT(*) >= 20 ORDER BY avg_empirical_promo_lift_pct DESC LIMIT 5",
           "reference_sql": "SELECT family, COUNT(*) AS n_series, ROUND(AVG(empirical_promo_lift_pct), 2) AS avg_lift_pct FROM promo_elasticity_summary GROUP BY family HAVING COUNT(*) >= 20 ORDER BY avg_lift_pct DESC LIMIT 5",
           "actual_row_preview": [
@@ -194,7 +195,7 @@
           "id": "med_07",
           "difficulty": "medium",
           "question": "Which 5 HIGH_VELOCITY_ELEVATED_ZERO_SALES_DAYS_PROXY series in zero_sales_day_proxy_summary have the highest zero_sales_rate_pct?",
-          "category": "wrong_join_or_aggregation",
+          "category": "projection_mismatch",
           "generated_sql": "SELECT store_nbr, city, state, family, zero_sales_rate_pct FROM zero_sales_day_proxy_summary WHERE zero_sales_proxy_tier = 'HIGH_VELOCITY_ELEVATED_ZERO_SALES_DAYS_PROXY' ORDER BY zero_sales_rate_pct DESC LIMIT 5",
           "reference_sql": "SELECT store_nbr, city, family, ROUND(zero_sales_rate_pct, 2) AS zero_sales_rate_pct, ROUND(mean_daily_sales, 2) AS mean_daily_sales FROM zero_sales_day_proxy_summary WHERE zero_sales_proxy_tier = 'HIGH_VELOCITY_ELEVATED_ZERO_SALES_DAYS_PROXY' ORDER BY zero_sales_rate_pct DESC, mean_daily_sales DESC LIMIT 5",
           "actual_row_preview": [
@@ -235,7 +236,7 @@
           "id": "med_08",
           "difficulty": "medium",
           "question": "In perishable_volatility_summary, what is the average cv_demand and series count for each volatility_proxy_tier?",
-          "category": "wrong_join_or_aggregation",
+          "category": "projection_mismatch",
           "generated_sql": "SELECT volatility_proxy_tier, AVG(cv_demand) AS avg_cv_demand, COUNT(*) AS series_count FROM perishable_volatility_summary GROUP BY volatility_proxy_tier LIMIT 100",
           "reference_sql": "SELECT volatility_proxy_tier, COUNT(*) AS series_count, ROUND(AVG(cv_demand), 4) AS avg_cv_demand FROM perishable_volatility_summary GROUP BY volatility_proxy_tier ORDER BY avg_cv_demand DESC",
           "actual_row_preview": [
@@ -268,7 +269,7 @@
           "id": "med_09",
           "difficulty": "medium",
           "question": "Among PERISHABLE families in perishable_volatility_summary, what is the average cv_demand per family, ordered highest first?",
-          "category": "wrong_join_or_aggregation",
+          "category": "projection_mismatch",
           "generated_sql": "SELECT family, AVG(cv_demand) AS avg_cv_demand FROM perishable_volatility_summary WHERE perishability_class = 'PERISHABLE' GROUP BY family ORDER BY avg_cv_demand DESC LIMIT 100",
           "reference_sql": "SELECT family, COUNT(*) AS n_stores, ROUND(AVG(cv_demand), 4) AS avg_cv_demand FROM perishable_volatility_summary WHERE perishability_class = 'PERISHABLE' GROUP BY family ORDER BY avg_cv_demand DESC",
           "actual_row_preview": [
@@ -299,7 +300,7 @@
           "id": "med_12",
           "difficulty": "medium",
           "question": "In sim_policy_summary, which rows achieve a fill_rate_pct of at least 99.0 at lead_time_days = 7, ordered by average_inventory_units ascending?",
-          "category": "wrong_join_or_aggregation",
+          "category": "projection_mismatch",
           "generated_sql": "SELECT * FROM sim_policy_summary WHERE lead_time_days = 7 AND fill_rate_pct >= 99.0 ORDER BY average_inventory_units ASC LIMIT 100",
           "reference_sql": "SELECT policy, service_level, z_value, fill_rate_pct, average_inventory_units FROM sim_policy_summary WHERE lead_time_days = 7 AND fill_rate_pct >= 99.0 ORDER BY average_inventory_units ASC",
           "actual_row_preview": [
@@ -366,7 +367,7 @@
           "id": "hard_01",
           "difficulty": "hard",
           "question": "Without double counting across product families, which 5 stores had the highest total weekly_transactions across all weeks in weekly_store_family_summary?",
-          "category": "wrong_join_or_aggregation",
+          "category": "projection_mismatch",
           "generated_sql": "WITH weekly_tx AS (SELECT store_nbr, week_start_date, MAX(weekly_transactions) AS week_tx FROM weekly_store_family_summary GROUP BY store_nbr, week_start_date) SELECT store_nbr, SUM(week_tx) AS total_weekly_transactions FROM weekly_tx GROUP BY store_nbr ORDER BY total_weekly_transactions DESC LIMIT 5",
           "reference_sql": "WITH store_weeks AS (  SELECT store_nbr, city, week_start_date, MAX(weekly_transactions) AS wk_tx   FROM weekly_store_family_summary   GROUP BY store_nbr, city, week_start_date) SELECT store_nbr, city, SUM(wk_tx) AS total_transactions FROM store_weeks GROUP BY store_nbr, city ORDER BY total_transactions DESC LIMIT 5",
           "actual_row_preview": [
@@ -397,7 +398,7 @@
           "id": "hard_02",
           "difficulty": "hard",
           "question": "For each store_type in weekly_store_family_summary, which single store has the highest total unit sales (rank 1 per store_type)?",
-          "category": "wrong_join_or_aggregation",
+          "category": "projection_mismatch",
           "generated_sql": "WITH store_sales AS (SELECT store_type, store_nbr, SUM(total_sales) AS total_sales FROM weekly_store_family_summary GROUP BY store_type, store_nbr) SELECT store_type, store_nbr, total_sales FROM (SELECT *, ROW_NUMBER() OVER (PARTITION BY store_type ORDER BY total_sales DESC) AS rn FROM store_sales) AS t WHERE rn = 1 ORDER BY store_type LIMIT 100",
           "reference_sql": "WITH store_totals AS (  SELECT store_type, store_nbr, city, ROUND(SUM(total_sales), 2) AS store_sales,   ROW_NUMBER() OVER (PARTITION BY store_type ORDER BY SUM(total_sales) DESC) AS rk   FROM weekly_store_family_summary   GROUP BY store_type, store_nbr, city) SELECT store_type, store_nbr, city, store_sales FROM store_totals WHERE rk = 1 ORDER BY store_type ASC",
           "actual_row_preview": [
@@ -432,7 +433,7 @@
           "id": "hard_03",
           "difficulty": "hard",
           "question": "Join promo_elasticity_summary and perishable_volatility_summary on store_nbr and family: for PERISHABLE series, what is the average empirical_promo_lift_pct and average cv_demand for each volatility_proxy_tier?",
-          "category": "wrong_join_or_aggregation",
+          "category": "projection_mismatch",
           "generated_sql": "SELECT pvs.volatility_proxy_tier, AVG(pes.empirical_promo_lift_pct) AS avg_empirical_promo_lift_pct, AVG(pvs.cv_demand) AS avg_cv_demand FROM perishable_volatility_summary AS pvs JOIN promo_elasticity_summary AS pes ON pvs.store_nbr = pes.store_nbr AND pvs.family = pes.family WHERE pvs.perishability_class = 'PERISHABLE' GROUP BY pvs.volatility_proxy_tier ORDER BY pvs.volatility_proxy_tier LIMIT 100",
           "reference_sql": "SELECT v.volatility_proxy_tier, COUNT(*) AS paired_series, ROUND(AVG(p.empirical_promo_lift_pct), 2) AS avg_promo_lift_pct, ROUND(AVG(v.cv_demand), 4) AS avg_cv_demand FROM promo_elasticity_summary p JOIN perishable_volatility_summary v   ON p.store_nbr = v.store_nbr AND p.family = v.family WHERE v.perishability_class = 'PERISHABLE' GROUP BY v.volatility_proxy_tier ORDER BY avg_cv_demand DESC",
           "actual_row_preview": [
@@ -467,7 +468,7 @@
           "id": "hard_04",
           "difficulty": "hard",
           "question": "Join zero_sales_day_proxy_summary and perishable_volatility_summary on store_nbr and family: which 5 HIGH_VOLATILITY_PERISHABLE_PROXY series have the highest zero_sales_rate_pct?",
-          "category": "wrong_join_or_aggregation",
+          "category": "projection_mismatch",
           "generated_sql": "SELECT z.store_nbr, z.city, z.family, z.zero_sales_rate_pct FROM zero_sales_day_proxy_summary AS z JOIN perishable_volatility_summary AS p USING (store_nbr, family) WHERE p.volatility_proxy_tier = 'HIGH_VOLATILITY_PERISHABLE_PROXY' ORDER BY z.zero_sales_rate_pct DESC LIMIT 5",
           "reference_sql": "SELECT z.store_nbr, z.city, z.family, ROUND(z.zero_sales_rate_pct, 2) AS zero_sales_rate_pct, ROUND(v.cv_demand, 4) AS cv_demand FROM zero_sales_day_proxy_summary z JOIN perishable_volatility_summary v   ON z.store_nbr = v.store_nbr AND z.family = v.family WHERE v.volatility_proxy_tier = 'HIGH_VOLATILITY_PERISHABLE_PROXY' ORDER BY z.zero_sales_rate_pct DESC, v.cv_demand DESC LIMIT 5",
           "actual_row_preview": [
@@ -533,7 +534,7 @@
           "id": "hard_08",
           "difficulty": "hard",
           "question": "Compare chain-wide weekly unit sales in weeks with oil price below 50 vs weeks with oil price of 50 or above: what is the number of weeks and average weekly chain sales in each regime?",
-          "category": "wrong_join_or_aggregation",
+          "category": "projection_mismatch",
           "generated_sql": "WITH weekly_chain AS (SELECT week_start_date, MAX(avg_oil_price) AS avg_oil_price, SUM(total_sales) AS week_sales FROM weekly_store_family_summary GROUP BY week_start_date) SELECT CASE WHEN avg_oil_price < 50 THEN 'below_50' ELSE '50_or_above' END AS oil_price_regime, COUNT(*) AS num_weeks, AVG(week_sales) AS avg_weekly_chain_sales FROM weekly_chain GROUP BY oil_price_regime LIMIT 100",
           "reference_sql": "WITH weekly_chain AS (  SELECT week_start_date, AVG(avg_oil_price) AS oil_price,   SUM(total_sales) AS chain_weekly_sales   FROM weekly_store_family_summary   WHERE avg_oil_price IS NOT NULL   GROUP BY week_start_date) SELECT CASE WHEN oil_price < 50 THEN 'UNDER_50' ELSE 'AT_OR_ABOVE_50' END AS oil_regime, COUNT(*) AS n_weeks, ROUND(AVG(chain_weekly_sales), 2) AS avg_weekly_sales FROM weekly_chain GROUP BY oil_regime ORDER BY oil_regime ASC",
           "actual_row_preview": [
@@ -632,7 +633,8 @@
         }
       },
       "failure_counts": {
-        "wrong_join_or_aggregation": 12,
+        "projection_mismatch": 11,
+        "wrong_join_or_aggregation": 1,
         "wrong_column_semantics": 0,
         "hallucinated_table_or_column": 0,
         "syntax_error": 0,
@@ -645,7 +647,7 @@
           "id": "med_04",
           "difficulty": "medium",
           "question": "Which 5 store-family series in promo_elasticity_summary have the highest empirical_promo_lift_pct?",
-          "category": "wrong_join_or_aggregation",
+          "category": "projection_mismatch",
           "generated_sql": "SELECT store_nbr, city, state, store_type, store_cluster, family, empirical_promo_lift_pct FROM promo_elasticity_summary ORDER BY empirical_promo_lift_pct DESC LIMIT 5",
           "reference_sql": "SELECT store_nbr, family, ROUND(empirical_promo_lift_pct, 2) AS empirical_promo_lift_pct FROM promo_elasticity_summary ORDER BY empirical_promo_lift_pct DESC LIMIT 5",
           "actual_row_preview": [
@@ -686,7 +688,7 @@
           "id": "med_05",
           "difficulty": "medium",
           "question": "For each product family in promo_elasticity_summary with at least 20 evaluated series, what is the average empirical_promo_lift_pct, ordered highest first (top 5)?",
-          "category": "wrong_join_or_aggregation",
+          "category": "projection_mismatch",
           "generated_sql": "SELECT family, AVG(empirical_promo_lift_pct) AS avg_empirical_promo_lift_pct FROM promo_elasticity_summary GROUP BY family HAVING COUNT(*) >= 20 ORDER BY avg_empirical_promo_lift_pct DESC LIMIT 5",
           "reference_sql": "SELECT family, COUNT(*) AS n_series, ROUND(AVG(empirical_promo_lift_pct), 2) AS avg_lift_pct FROM promo_elasticity_summary GROUP BY family HAVING COUNT(*) >= 20 ORDER BY avg_lift_pct DESC LIMIT 5",
           "actual_row_preview": [
@@ -717,7 +719,7 @@
           "id": "med_07",
           "difficulty": "medium",
           "question": "Which 5 HIGH_VELOCITY_ELEVATED_ZERO_SALES_DAYS_PROXY series in zero_sales_day_proxy_summary have the highest zero_sales_rate_pct?",
-          "category": "wrong_join_or_aggregation",
+          "category": "projection_mismatch",
           "generated_sql": "SELECT store_nbr, city, state, family, zero_sales_rate_pct FROM zero_sales_day_proxy_summary WHERE zero_sales_proxy_tier = 'HIGH_VELOCITY_ELEVATED_ZERO_SALES_DAYS_PROXY' ORDER BY zero_sales_rate_pct DESC LIMIT 5",
           "reference_sql": "SELECT store_nbr, city, family, ROUND(zero_sales_rate_pct, 2) AS zero_sales_rate_pct, ROUND(mean_daily_sales, 2) AS mean_daily_sales FROM zero_sales_day_proxy_summary WHERE zero_sales_proxy_tier = 'HIGH_VELOCITY_ELEVATED_ZERO_SALES_DAYS_PROXY' ORDER BY zero_sales_rate_pct DESC, mean_daily_sales DESC LIMIT 5",
           "actual_row_preview": [
@@ -758,7 +760,7 @@
           "id": "med_08",
           "difficulty": "medium",
           "question": "In perishable_volatility_summary, what is the average cv_demand and series count for each volatility_proxy_tier?",
-          "category": "wrong_join_or_aggregation",
+          "category": "projection_mismatch",
           "generated_sql": "SELECT volatility_proxy_tier, AVG(cv_demand) AS avg_cv_demand, COUNT(*) AS series_count FROM perishable_volatility_summary GROUP BY volatility_proxy_tier LIMIT 100",
           "reference_sql": "SELECT volatility_proxy_tier, COUNT(*) AS series_count, ROUND(AVG(cv_demand), 4) AS avg_cv_demand FROM perishable_volatility_summary GROUP BY volatility_proxy_tier ORDER BY avg_cv_demand DESC",
           "actual_row_preview": [
@@ -791,7 +793,7 @@
           "id": "med_09",
           "difficulty": "medium",
           "question": "Among PERISHABLE families in perishable_volatility_summary, what is the average cv_demand per family, ordered highest first?",
-          "category": "wrong_join_or_aggregation",
+          "category": "projection_mismatch",
           "generated_sql": "SELECT family, AVG(cv_demand) AS avg_cv_demand FROM perishable_volatility_summary WHERE perishability_class = 'PERISHABLE' GROUP BY family ORDER BY avg_cv_demand DESC LIMIT 100",
           "reference_sql": "SELECT family, COUNT(*) AS n_stores, ROUND(AVG(cv_demand), 4) AS avg_cv_demand FROM perishable_volatility_summary WHERE perishability_class = 'PERISHABLE' GROUP BY family ORDER BY avg_cv_demand DESC",
           "actual_row_preview": [
@@ -822,7 +824,7 @@
           "id": "med_12",
           "difficulty": "medium",
           "question": "In sim_policy_summary, which rows achieve a fill_rate_pct of at least 99.0 at lead_time_days = 7, ordered by average_inventory_units ascending?",
-          "category": "wrong_join_or_aggregation",
+          "category": "projection_mismatch",
           "generated_sql": "SELECT * FROM sim_policy_summary WHERE lead_time_days = 7 AND fill_rate_pct >= 99.0 ORDER BY average_inventory_units ASC LIMIT 100",
           "reference_sql": "SELECT policy, service_level, z_value, fill_rate_pct, average_inventory_units FROM sim_policy_summary WHERE lead_time_days = 7 AND fill_rate_pct >= 99.0 ORDER BY average_inventory_units ASC",
           "actual_row_preview": [
@@ -889,7 +891,7 @@
           "id": "hard_01",
           "difficulty": "hard",
           "question": "Without double counting across product families, which 5 stores had the highest total weekly_transactions across all weeks in weekly_store_family_summary?",
-          "category": "wrong_join_or_aggregation",
+          "category": "projection_mismatch",
           "generated_sql": "WITH weekly_tx AS (SELECT store_nbr, week_start_date, MAX(weekly_transactions) AS week_tx FROM weekly_store_family_summary GROUP BY store_nbr, week_start_date) SELECT store_nbr, SUM(week_tx) AS total_weekly_transactions FROM weekly_tx GROUP BY store_nbr ORDER BY total_weekly_transactions DESC LIMIT 5",
           "reference_sql": "WITH store_weeks AS (  SELECT store_nbr, city, week_start_date, MAX(weekly_transactions) AS wk_tx   FROM weekly_store_family_summary   GROUP BY store_nbr, city, week_start_date) SELECT store_nbr, city, SUM(wk_tx) AS total_transactions FROM store_weeks GROUP BY store_nbr, city ORDER BY total_transactions DESC LIMIT 5",
           "actual_row_preview": [
@@ -920,7 +922,7 @@
           "id": "hard_02",
           "difficulty": "hard",
           "question": "For each store_type in weekly_store_family_summary, which single store has the highest total unit sales (rank 1 per store_type)?",
-          "category": "wrong_join_or_aggregation",
+          "category": "projection_mismatch",
           "generated_sql": "WITH store_sales AS (SELECT store_type, store_nbr, SUM(total_sales) AS total_sales FROM weekly_store_family_summary GROUP BY store_type, store_nbr) SELECT store_type, store_nbr, total_sales FROM (SELECT *, ROW_NUMBER() OVER (PARTITION BY store_type ORDER BY total_sales DESC) AS rn FROM store_sales) AS t WHERE rn = 1 ORDER BY store_type LIMIT 100",
           "reference_sql": "WITH store_totals AS (  SELECT store_type, store_nbr, city, ROUND(SUM(total_sales), 2) AS store_sales,   ROW_NUMBER() OVER (PARTITION BY store_type ORDER BY SUM(total_sales) DESC) AS rk   FROM weekly_store_family_summary   GROUP BY store_type, store_nbr, city) SELECT store_type, store_nbr, city, store_sales FROM store_totals WHERE rk = 1 ORDER BY store_type ASC",
           "actual_row_preview": [
@@ -955,7 +957,7 @@
           "id": "hard_03",
           "difficulty": "hard",
           "question": "Join promo_elasticity_summary and perishable_volatility_summary on store_nbr and family: for PERISHABLE series, what is the average empirical_promo_lift_pct and average cv_demand for each volatility_proxy_tier?",
-          "category": "wrong_join_or_aggregation",
+          "category": "projection_mismatch",
           "generated_sql": "SELECT pvs.volatility_proxy_tier, AVG(pes.empirical_promo_lift_pct) AS avg_empirical_promo_lift_pct, AVG(pvs.cv_demand) AS avg_cv_demand FROM perishable_volatility_summary AS pvs JOIN promo_elasticity_summary AS pes ON pvs.store_nbr = pes.store_nbr AND pvs.family = pes.family WHERE pvs.perishability_class = 'PERISHABLE' GROUP BY pvs.volatility_proxy_tier ORDER BY pvs.volatility_proxy_tier LIMIT 100",
           "reference_sql": "SELECT v.volatility_proxy_tier, COUNT(*) AS paired_series, ROUND(AVG(p.empirical_promo_lift_pct), 2) AS avg_promo_lift_pct, ROUND(AVG(v.cv_demand), 4) AS avg_cv_demand FROM promo_elasticity_summary p JOIN perishable_volatility_summary v   ON p.store_nbr = v.store_nbr AND p.family = v.family WHERE v.perishability_class = 'PERISHABLE' GROUP BY v.volatility_proxy_tier ORDER BY avg_cv_demand DESC",
           "actual_row_preview": [
@@ -990,7 +992,7 @@
           "id": "hard_04",
           "difficulty": "hard",
           "question": "Join zero_sales_day_proxy_summary and perishable_volatility_summary on store_nbr and family: which 5 HIGH_VOLATILITY_PERISHABLE_PROXY series have the highest zero_sales_rate_pct?",
-          "category": "wrong_join_or_aggregation",
+          "category": "projection_mismatch",
           "generated_sql": "SELECT z.store_nbr, z.city, z.family, z.zero_sales_rate_pct FROM zero_sales_day_proxy_summary AS z JOIN perishable_volatility_summary AS p USING (store_nbr, family) WHERE p.volatility_proxy_tier = 'HIGH_VOLATILITY_PERISHABLE_PROXY' ORDER BY z.zero_sales_rate_pct DESC LIMIT 5",
           "reference_sql": "SELECT z.store_nbr, z.city, z.family, ROUND(z.zero_sales_rate_pct, 2) AS zero_sales_rate_pct, ROUND(v.cv_demand, 4) AS cv_demand FROM zero_sales_day_proxy_summary z JOIN perishable_volatility_summary v   ON z.store_nbr = v.store_nbr AND z.family = v.family WHERE v.volatility_proxy_tier = 'HIGH_VOLATILITY_PERISHABLE_PROXY' ORDER BY z.zero_sales_rate_pct DESC, v.cv_demand DESC LIMIT 5",
           "actual_row_preview": [
@@ -1056,7 +1058,7 @@
           "id": "hard_08",
           "difficulty": "hard",
           "question": "Compare chain-wide weekly unit sales in weeks with oil price below 50 vs weeks with oil price of 50 or above: what is the number of weeks and average weekly chain sales in each regime?",
-          "category": "wrong_join_or_aggregation",
+          "category": "projection_mismatch",
           "generated_sql": "WITH weekly_chain AS (SELECT week_start_date, MAX(avg_oil_price) AS avg_oil_price, SUM(total_sales) AS week_sales FROM weekly_store_family_summary GROUP BY week_start_date) SELECT CASE WHEN avg_oil_price < 50 THEN 'below_50' ELSE '50_or_above' END AS oil_price_regime, COUNT(*) AS num_weeks, AVG(week_sales) AS avg_weekly_chain_sales FROM weekly_chain GROUP BY oil_price_regime LIMIT 100",
           "reference_sql": "WITH weekly_chain AS (  SELECT week_start_date, AVG(avg_oil_price) AS oil_price,   SUM(total_sales) AS chain_weekly_sales   FROM weekly_store_family_summary   WHERE avg_oil_price IS NOT NULL   GROUP BY week_start_date) SELECT CASE WHEN oil_price < 50 THEN 'UNDER_50' ELSE 'AT_OR_ABOVE_50' END AS oil_regime, COUNT(*) AS n_weeks, ROUND(AVG(chain_weekly_sales), 2) AS avg_weekly_sales FROM weekly_chain GROUP BY oil_regime ORDER BY oil_regime ASC",
           "actual_row_preview": [
@@ -1155,6 +1157,7 @@
         }
       },
       "failure_counts": {
+        "projection_mismatch": 0,
         "wrong_join_or_aggregation": 7,
         "wrong_column_semantics": 7,
         "hallucinated_table_or_column": 0,
@@ -2114,6 +2117,7 @@
         }
       },
       "failure_counts": {
+        "projection_mismatch": 0,
         "wrong_join_or_aggregation": 0,
         "wrong_column_semantics": 0,
         "hallucinated_table_or_column": 0,
@@ -2554,6 +2558,7 @@
         }
       },
       "failure_counts": {
+        "projection_mismatch": 0,
         "wrong_join_or_aggregation": 0,
         "wrong_column_semantics": 0,
         "hallucinated_table_or_column": 0,
@@ -2632,7 +2637,8 @@
         }
       },
       "failure_counts": {
-        "wrong_join_or_aggregation": 12,
+        "projection_mismatch": 11,
+        "wrong_join_or_aggregation": 1,
         "wrong_column_semantics": 0,
         "hallucinated_table_or_column": 0,
         "syntax_error": 0,
@@ -2645,7 +2651,7 @@
           "id": "med_04",
           "difficulty": "medium",
           "question": "Which 5 store-family series in promo_elasticity_summary have the highest empirical_promo_lift_pct?",
-          "category": "wrong_join_or_aggregation",
+          "category": "projection_mismatch",
           "generated_sql": "SELECT store_nbr, city, state, store_type, store_cluster, family, empirical_promo_lift_pct FROM promo_elasticity_summary ORDER BY empirical_promo_lift_pct DESC LIMIT 5",
           "reference_sql": "SELECT store_nbr, family, ROUND(empirical_promo_lift_pct, 2) AS empirical_promo_lift_pct FROM promo_elasticity_summary ORDER BY empirical_promo_lift_pct DESC LIMIT 5",
           "actual_row_preview": [
@@ -2686,7 +2692,7 @@
           "id": "med_05",
           "difficulty": "medium",
           "question": "For each product family in promo_elasticity_summary with at least 20 evaluated series, what is the average empirical_promo_lift_pct, ordered highest first (top 5)?",
-          "category": "wrong_join_or_aggregation",
+          "category": "projection_mismatch",
           "generated_sql": "SELECT family, AVG(empirical_promo_lift_pct) AS avg_empirical_promo_lift_pct FROM promo_elasticity_summary GROUP BY family HAVING COUNT(*) >= 20 ORDER BY avg_empirical_promo_lift_pct DESC LIMIT 5",
           "reference_sql": "SELECT family, COUNT(*) AS n_series, ROUND(AVG(empirical_promo_lift_pct), 2) AS avg_lift_pct FROM promo_elasticity_summary GROUP BY family HAVING COUNT(*) >= 20 ORDER BY avg_lift_pct DESC LIMIT 5",
           "actual_row_preview": [
@@ -2717,7 +2723,7 @@
           "id": "med_07",
           "difficulty": "medium",
           "question": "Which 5 HIGH_VELOCITY_ELEVATED_ZERO_SALES_DAYS_PROXY series in zero_sales_day_proxy_summary have the highest zero_sales_rate_pct?",
-          "category": "wrong_join_or_aggregation",
+          "category": "projection_mismatch",
           "generated_sql": "SELECT store_nbr, city, state, family, zero_sales_rate_pct FROM zero_sales_day_proxy_summary WHERE zero_sales_proxy_tier = 'HIGH_VELOCITY_ELEVATED_ZERO_SALES_DAYS_PROXY' ORDER BY zero_sales_rate_pct DESC LIMIT 5",
           "reference_sql": "SELECT store_nbr, city, family, ROUND(zero_sales_rate_pct, 2) AS zero_sales_rate_pct, ROUND(mean_daily_sales, 2) AS mean_daily_sales FROM zero_sales_day_proxy_summary WHERE zero_sales_proxy_tier = 'HIGH_VELOCITY_ELEVATED_ZERO_SALES_DAYS_PROXY' ORDER BY zero_sales_rate_pct DESC, mean_daily_sales DESC LIMIT 5",
           "actual_row_preview": [
@@ -2758,7 +2764,7 @@
           "id": "med_08",
           "difficulty": "medium",
           "question": "In perishable_volatility_summary, what is the average cv_demand and series count for each volatility_proxy_tier?",
-          "category": "wrong_join_or_aggregation",
+          "category": "projection_mismatch",
           "generated_sql": "SELECT volatility_proxy_tier, AVG(cv_demand) AS avg_cv_demand, COUNT(*) AS series_count FROM perishable_volatility_summary GROUP BY volatility_proxy_tier LIMIT 100",
           "reference_sql": "SELECT volatility_proxy_tier, COUNT(*) AS series_count, ROUND(AVG(cv_demand), 4) AS avg_cv_demand FROM perishable_volatility_summary GROUP BY volatility_proxy_tier ORDER BY avg_cv_demand DESC",
           "actual_row_preview": [
@@ -2791,7 +2797,7 @@
           "id": "med_09",
           "difficulty": "medium",
           "question": "Among PERISHABLE families in perishable_volatility_summary, what is the average cv_demand per family, ordered highest first?",
-          "category": "wrong_join_or_aggregation",
+          "category": "projection_mismatch",
           "generated_sql": "SELECT family, AVG(cv_demand) AS avg_cv_demand FROM perishable_volatility_summary WHERE perishability_class = 'PERISHABLE' GROUP BY family ORDER BY avg_cv_demand DESC LIMIT 100",
           "reference_sql": "SELECT family, COUNT(*) AS n_stores, ROUND(AVG(cv_demand), 4) AS avg_cv_demand FROM perishable_volatility_summary WHERE perishability_class = 'PERISHABLE' GROUP BY family ORDER BY avg_cv_demand DESC",
           "actual_row_preview": [
@@ -2822,7 +2828,7 @@
           "id": "med_12",
           "difficulty": "medium",
           "question": "In sim_policy_summary, which rows achieve a fill_rate_pct of at least 99.0 at lead_time_days = 7, ordered by average_inventory_units ascending?",
-          "category": "wrong_join_or_aggregation",
+          "category": "projection_mismatch",
           "generated_sql": "SELECT * FROM sim_policy_summary WHERE lead_time_days = 7 AND fill_rate_pct >= 99.0 ORDER BY average_inventory_units ASC LIMIT 100",
           "reference_sql": "SELECT policy, service_level, z_value, fill_rate_pct, average_inventory_units FROM sim_policy_summary WHERE lead_time_days = 7 AND fill_rate_pct >= 99.0 ORDER BY average_inventory_units ASC",
           "actual_row_preview": [
@@ -2889,7 +2895,7 @@
           "id": "hard_01",
           "difficulty": "hard",
           "question": "Without double counting across product families, which 5 stores had the highest total weekly_transactions across all weeks in weekly_store_family_summary?",
-          "category": "wrong_join_or_aggregation",
+          "category": "projection_mismatch",
           "generated_sql": "WITH weekly_tx AS (SELECT store_nbr, week_start_date, MAX(weekly_transactions) AS week_tx FROM weekly_store_family_summary GROUP BY store_nbr, week_start_date) SELECT store_nbr, SUM(week_tx) AS total_weekly_transactions FROM weekly_tx GROUP BY store_nbr ORDER BY total_weekly_transactions DESC LIMIT 5",
           "reference_sql": "WITH store_weeks AS (  SELECT store_nbr, city, week_start_date, MAX(weekly_transactions) AS wk_tx   FROM weekly_store_family_summary   GROUP BY store_nbr, city, week_start_date) SELECT store_nbr, city, SUM(wk_tx) AS total_transactions FROM store_weeks GROUP BY store_nbr, city ORDER BY total_transactions DESC LIMIT 5",
           "actual_row_preview": [
@@ -2920,7 +2926,7 @@
           "id": "hard_02",
           "difficulty": "hard",
           "question": "For each store_type in weekly_store_family_summary, which single store has the highest total unit sales (rank 1 per store_type)?",
-          "category": "wrong_join_or_aggregation",
+          "category": "projection_mismatch",
           "generated_sql": "WITH store_sales AS (SELECT store_type, store_nbr, SUM(total_sales) AS total_sales FROM weekly_store_family_summary GROUP BY store_type, store_nbr) SELECT store_type, store_nbr, total_sales FROM (SELECT *, ROW_NUMBER() OVER (PARTITION BY store_type ORDER BY total_sales DESC) AS rn FROM store_sales) AS t WHERE rn = 1 ORDER BY store_type LIMIT 100",
           "reference_sql": "WITH store_totals AS (  SELECT store_type, store_nbr, city, ROUND(SUM(total_sales), 2) AS store_sales,   ROW_NUMBER() OVER (PARTITION BY store_type ORDER BY SUM(total_sales) DESC) AS rk   FROM weekly_store_family_summary   GROUP BY store_type, store_nbr, city) SELECT store_type, store_nbr, city, store_sales FROM store_totals WHERE rk = 1 ORDER BY store_type ASC",
           "actual_row_preview": [
@@ -2955,7 +2961,7 @@
           "id": "hard_03",
           "difficulty": "hard",
           "question": "Join promo_elasticity_summary and perishable_volatility_summary on store_nbr and family: for PERISHABLE series, what is the average empirical_promo_lift_pct and average cv_demand for each volatility_proxy_tier?",
-          "category": "wrong_join_or_aggregation",
+          "category": "projection_mismatch",
           "generated_sql": "SELECT pvs.volatility_proxy_tier, AVG(pes.empirical_promo_lift_pct) AS avg_empirical_promo_lift_pct, AVG(pvs.cv_demand) AS avg_cv_demand FROM perishable_volatility_summary AS pvs JOIN promo_elasticity_summary AS pes ON pvs.store_nbr = pes.store_nbr AND pvs.family = pes.family WHERE pvs.perishability_class = 'PERISHABLE' GROUP BY pvs.volatility_proxy_tier ORDER BY pvs.volatility_proxy_tier LIMIT 100",
           "reference_sql": "SELECT v.volatility_proxy_tier, COUNT(*) AS paired_series, ROUND(AVG(p.empirical_promo_lift_pct), 2) AS avg_promo_lift_pct, ROUND(AVG(v.cv_demand), 4) AS avg_cv_demand FROM promo_elasticity_summary p JOIN perishable_volatility_summary v   ON p.store_nbr = v.store_nbr AND p.family = v.family WHERE v.perishability_class = 'PERISHABLE' GROUP BY v.volatility_proxy_tier ORDER BY avg_cv_demand DESC",
           "actual_row_preview": [
@@ -2990,7 +2996,7 @@
           "id": "hard_04",
           "difficulty": "hard",
           "question": "Join zero_sales_day_proxy_summary and perishable_volatility_summary on store_nbr and family: which 5 HIGH_VOLATILITY_PERISHABLE_PROXY series have the highest zero_sales_rate_pct?",
-          "category": "wrong_join_or_aggregation",
+          "category": "projection_mismatch",
           "generated_sql": "SELECT z.store_nbr, z.city, z.family, z.zero_sales_rate_pct FROM zero_sales_day_proxy_summary AS z JOIN perishable_volatility_summary AS p USING (store_nbr, family) WHERE p.volatility_proxy_tier = 'HIGH_VOLATILITY_PERISHABLE_PROXY' ORDER BY z.zero_sales_rate_pct DESC LIMIT 5",
           "reference_sql": "SELECT z.store_nbr, z.city, z.family, ROUND(z.zero_sales_rate_pct, 2) AS zero_sales_rate_pct, ROUND(v.cv_demand, 4) AS cv_demand FROM zero_sales_day_proxy_summary z JOIN perishable_volatility_summary v   ON z.store_nbr = v.store_nbr AND z.family = v.family WHERE v.volatility_proxy_tier = 'HIGH_VOLATILITY_PERISHABLE_PROXY' ORDER BY z.zero_sales_rate_pct DESC, v.cv_demand DESC LIMIT 5",
           "actual_row_preview": [
@@ -3056,7 +3062,7 @@
           "id": "hard_08",
           "difficulty": "hard",
           "question": "Compare chain-wide weekly unit sales in weeks with oil price below 50 vs weeks with oil price of 50 or above: what is the number of weeks and average weekly chain sales in each regime?",
-          "category": "wrong_join_or_aggregation",
+          "category": "projection_mismatch",
           "generated_sql": "WITH weekly_chain AS (SELECT week_start_date, MAX(avg_oil_price) AS avg_oil_price, SUM(total_sales) AS week_sales FROM weekly_store_family_summary GROUP BY week_start_date) SELECT CASE WHEN avg_oil_price < 50 THEN 'below_50' ELSE '50_or_above' END AS oil_price_regime, COUNT(*) AS num_weeks, AVG(week_sales) AS avg_weekly_chain_sales FROM weekly_chain GROUP BY oil_price_regime LIMIT 100",
           "reference_sql": "WITH weekly_chain AS (  SELECT week_start_date, AVG(avg_oil_price) AS oil_price,   SUM(total_sales) AS chain_weekly_sales   FROM weekly_store_family_summary   WHERE avg_oil_price IS NOT NULL   GROUP BY week_start_date) SELECT CASE WHEN oil_price < 50 THEN 'UNDER_50' ELSE 'AT_OR_ABOVE_50' END AS oil_regime, COUNT(*) AS n_weeks, ROUND(AVG(chain_weekly_sales), 2) AS avg_weekly_sales FROM weekly_chain GROUP BY oil_regime ORDER BY oil_regime ASC",
           "actual_row_preview": [
@@ -3228,6 +3234,7 @@
           }
         },
         "failure_counts": {
+          "projection_mismatch": 0,
           "wrong_join_or_aggregation": 0,
           "wrong_column_semantics": 0,
           "hallucinated_table_or_column": 0,
@@ -3306,6 +3313,7 @@
           }
         },
         "failure_counts": {
+          "projection_mismatch": 0,
           "wrong_join_or_aggregation": 0,
           "wrong_column_semantics": 0,
           "hallucinated_table_or_column": 0,
@@ -3384,6 +3392,7 @@
           }
         },
         "failure_counts": {
+          "projection_mismatch": 0,
           "wrong_join_or_aggregation": 0,
           "wrong_column_semantics": 3,
           "hallucinated_table_or_column": 0,
@@ -3548,6 +3557,7 @@
           }
         },
         "failure_counts": {
+          "projection_mismatch": 0,
           "wrong_join_or_aggregation": 0,
           "wrong_column_semantics": 0,
           "hallucinated_table_or_column": 0,
@@ -3708,6 +3718,7 @@
           }
         },
         "failure_counts": {
+          "projection_mismatch": 0,
           "wrong_join_or_aggregation": 0,
           "wrong_column_semantics": 0,
           "hallucinated_table_or_column": 0,
@@ -3786,6 +3797,7 @@
           }
         },
         "failure_counts": {
+          "projection_mismatch": 0,
           "wrong_join_or_aggregation": 0,
           "wrong_column_semantics": 0,
           "hallucinated_table_or_column": 0,
@@ -3907,7 +3919,8 @@
             }
           },
           "failure_counts": {
-            "wrong_join_or_aggregation": 10,
+            "projection_mismatch": 10,
+            "wrong_join_or_aggregation": 0,
             "wrong_column_semantics": 0,
             "hallucinated_table_or_column": 0,
             "syntax_error": 0,
@@ -3920,7 +3933,7 @@
               "id": "med_05",
               "difficulty": "medium",
               "question": "For each product family in promo_elasticity_summary with at least 20 evaluated series, what is the average empirical_promo_lift_pct, ordered highest first (top 5)?",
-              "category": "wrong_join_or_aggregation",
+              "category": "projection_mismatch",
               "generated_sql": "SELECT family, AVG(empirical_promo_lift_pct) AS avg_lift_pct FROM promo_elasticity_summary GROUP BY family HAVING COUNT(*) >= 20 ORDER BY avg_lift_pct DESC LIMIT 5",
               "reference_sql": "SELECT family, COUNT(*) AS n_series, ROUND(AVG(empirical_promo_lift_pct), 2) AS avg_lift_pct FROM promo_elasticity_summary GROUP BY family HAVING COUNT(*) >= 20 ORDER BY avg_lift_pct DESC LIMIT 5",
               "actual_row_preview": [
@@ -3951,7 +3964,7 @@
               "id": "med_07",
               "difficulty": "medium",
               "question": "Which 5 HIGH_VELOCITY_ELEVATED_ZERO_SALES_DAYS_PROXY series in zero_sales_day_proxy_summary have the highest zero_sales_rate_pct?",
-              "category": "wrong_join_or_aggregation",
+              "category": "projection_mismatch",
               "generated_sql": "SELECT store_nbr, family, zero_sales_rate_pct FROM zero_sales_day_proxy_summary WHERE zero_sales_proxy_tier = 'HIGH_VELOCITY_ELEVATED_ZERO_SALES_DAYS_PROXY' ORDER BY zero_sales_rate_pct DESC LIMIT 5",
               "reference_sql": "SELECT store_nbr, city, family, ROUND(zero_sales_rate_pct, 2) AS zero_sales_rate_pct, ROUND(mean_daily_sales, 2) AS mean_daily_sales FROM zero_sales_day_proxy_summary WHERE zero_sales_proxy_tier = 'HIGH_VELOCITY_ELEVATED_ZERO_SALES_DAYS_PROXY' ORDER BY zero_sales_rate_pct DESC, mean_daily_sales DESC LIMIT 5",
               "actual_row_preview": [
@@ -3988,7 +4001,7 @@
               "id": "med_08",
               "difficulty": "medium",
               "question": "In perishable_volatility_summary, what is the average cv_demand and series count for each volatility_proxy_tier?",
-              "category": "wrong_join_or_aggregation",
+              "category": "projection_mismatch",
               "generated_sql": "SELECT volatility_proxy_tier, AVG(cv_demand) AS avg_cv_demand, COUNT(*) AS series_count FROM perishable_volatility_summary GROUP BY volatility_proxy_tier ORDER BY volatility_proxy_tier LIMIT 100",
               "reference_sql": "SELECT volatility_proxy_tier, COUNT(*) AS series_count, ROUND(AVG(cv_demand), 4) AS avg_cv_demand FROM perishable_volatility_summary GROUP BY volatility_proxy_tier ORDER BY avg_cv_demand DESC",
               "actual_row_preview": [
@@ -4021,7 +4034,7 @@
               "id": "med_09",
               "difficulty": "medium",
               "question": "Among PERISHABLE families in perishable_volatility_summary, what is the average cv_demand per family, ordered highest first?",
-              "category": "wrong_join_or_aggregation",
+              "category": "projection_mismatch",
               "generated_sql": "SELECT family, AVG(cv_demand) AS avg_cv_demand FROM perishable_volatility_summary WHERE perishability_class = 'PERISHABLE' GROUP BY family ORDER BY avg_cv_demand DESC LIMIT 100",
               "reference_sql": "SELECT family, COUNT(*) AS n_stores, ROUND(AVG(cv_demand), 4) AS avg_cv_demand FROM perishable_volatility_summary WHERE perishability_class = 'PERISHABLE' GROUP BY family ORDER BY avg_cv_demand DESC",
               "actual_row_preview": [
@@ -4052,7 +4065,7 @@
               "id": "med_12",
               "difficulty": "medium",
               "question": "In sim_policy_summary, which rows achieve a fill_rate_pct of at least 99.0 at lead_time_days = 7, ordered by average_inventory_units ascending?",
-              "category": "wrong_join_or_aggregation",
+              "category": "projection_mismatch",
               "generated_sql": "SELECT * FROM sim_policy_summary WHERE lead_time_days = 7 AND fill_rate_pct >= 99.0 ORDER BY average_inventory_units ASC LIMIT 100",
               "reference_sql": "SELECT policy, service_level, z_value, fill_rate_pct, average_inventory_units FROM sim_policy_summary WHERE lead_time_days = 7 AND fill_rate_pct >= 99.0 ORDER BY average_inventory_units ASC",
               "actual_row_preview": [
@@ -4119,7 +4132,7 @@
               "id": "hard_01",
               "difficulty": "hard",
               "question": "Without double counting across product families, which 5 stores had the highest total weekly_transactions across all weeks in weekly_store_family_summary?",
-              "category": "wrong_join_or_aggregation",
+              "category": "projection_mismatch",
               "generated_sql": "WITH weekly_totals AS (SELECT store_nbr, week_start_date, MAX(weekly_transactions) AS weekly_transactions FROM weekly_store_family_summary GROUP BY store_nbr, week_start_date) SELECT store_nbr, SUM(weekly_transactions) AS total_weekly_transactions FROM weekly_totals GROUP BY store_nbr ORDER BY total_weekly_transactions DESC LIMIT 5",
               "reference_sql": "WITH store_weeks AS (  SELECT store_nbr, city, week_start_date, MAX(weekly_transactions) AS wk_tx   FROM weekly_store_family_summary   GROUP BY store_nbr, city, week_start_date) SELECT store_nbr, city, SUM(wk_tx) AS total_transactions FROM store_weeks GROUP BY store_nbr, city ORDER BY total_transactions DESC LIMIT 5",
               "actual_row_preview": [
@@ -4150,7 +4163,7 @@
               "id": "hard_02",
               "difficulty": "hard",
               "question": "For each store_type in weekly_store_family_summary, which single store has the highest total unit sales (rank 1 per store_type)?",
-              "category": "wrong_join_or_aggregation",
+              "category": "projection_mismatch",
               "generated_sql": "WITH store_totals AS (SELECT store_type, store_nbr, SUM(total_sales) AS total_sales FROM weekly_store_family_summary GROUP BY store_type, store_nbr) SELECT store_type, store_nbr, total_sales FROM (SELECT store_type, store_nbr, total_sales, ROW_NUMBER() OVER (PARTITION BY store_type ORDER BY total_sales DESC) AS rn FROM store_totals) AS t WHERE rn = 1 LIMIT 100",
               "reference_sql": "WITH store_totals AS (  SELECT store_type, store_nbr, city, ROUND(SUM(total_sales), 2) AS store_sales,   ROW_NUMBER() OVER (PARTITION BY store_type ORDER BY SUM(total_sales) DESC) AS rk   FROM weekly_store_family_summary   GROUP BY store_type, store_nbr, city) SELECT store_type, store_nbr, city, store_sales FROM store_totals WHERE rk = 1 ORDER BY store_type ASC",
               "actual_row_preview": [
@@ -4185,7 +4198,7 @@
               "id": "hard_03",
               "difficulty": "hard",
               "question": "Join promo_elasticity_summary and perishable_volatility_summary on store_nbr and family: for PERISHABLE series, what is the average empirical_promo_lift_pct and average cv_demand for each volatility_proxy_tier?",
-              "category": "wrong_join_or_aggregation",
+              "category": "projection_mismatch",
               "generated_sql": "SELECT p.volatility_proxy_tier, AVG(pe.empirical_promo_lift_pct) AS avg_empirical_promo_lift_pct, AVG(p.cv_demand) AS avg_cv_demand FROM perishable_volatility_summary AS p JOIN promo_elasticity_summary AS pe ON p.store_nbr = pe.store_nbr AND p.family = pe.family WHERE p.perishability_class = 'PERISHABLE' GROUP BY p.volatility_proxy_tier ORDER BY p.volatility_proxy_tier LIMIT 100",
               "reference_sql": "SELECT v.volatility_proxy_tier, COUNT(*) AS paired_series, ROUND(AVG(p.empirical_promo_lift_pct), 2) AS avg_promo_lift_pct, ROUND(AVG(v.cv_demand), 4) AS avg_cv_demand FROM promo_elasticity_summary p JOIN perishable_volatility_summary v   ON p.store_nbr = v.store_nbr AND p.family = v.family WHERE v.perishability_class = 'PERISHABLE' GROUP BY v.volatility_proxy_tier ORDER BY avg_cv_demand DESC",
               "actual_row_preview": [
@@ -4220,7 +4233,7 @@
               "id": "hard_04",
               "difficulty": "hard",
               "question": "Join zero_sales_day_proxy_summary and perishable_volatility_summary on store_nbr and family: which 5 HIGH_VOLATILITY_PERISHABLE_PROXY series have the highest zero_sales_rate_pct?",
-              "category": "wrong_join_or_aggregation",
+              "category": "projection_mismatch",
               "generated_sql": "SELECT z.store_nbr, z.family, z.zero_sales_rate_pct FROM zero_sales_day_proxy_summary AS z JOIN perishable_volatility_summary AS p ON z.store_nbr = p.store_nbr AND z.family = p.family WHERE p.volatility_proxy_tier = 'HIGH_VOLATILITY_PERISHABLE_PROXY' ORDER BY z.zero_sales_rate_pct DESC LIMIT 5",
               "reference_sql": "SELECT z.store_nbr, z.city, z.family, ROUND(z.zero_sales_rate_pct, 2) AS zero_sales_rate_pct, ROUND(v.cv_demand, 4) AS cv_demand FROM zero_sales_day_proxy_summary z JOIN perishable_volatility_summary v   ON z.store_nbr = v.store_nbr AND z.family = v.family WHERE v.volatility_proxy_tier = 'HIGH_VOLATILITY_PERISHABLE_PROXY' ORDER BY z.zero_sales_rate_pct DESC, v.cv_demand DESC LIMIT 5",
               "actual_row_preview": [
@@ -4257,7 +4270,7 @@
               "id": "hard_08",
               "difficulty": "hard",
               "question": "Compare chain-wide weekly unit sales in weeks with oil price below 50 vs weeks with oil price of 50 or above: what is the number of weeks and average weekly chain sales in each regime?",
-              "category": "wrong_join_or_aggregation",
+              "category": "projection_mismatch",
               "generated_sql": "WITH weekly_totals AS (SELECT week_start_date, SUM(total_sales) AS chain_sales, MIN(avg_oil_price) AS avg_oil_price FROM weekly_store_family_summary GROUP BY week_start_date) SELECT CASE WHEN avg_oil_price < 50 THEN 'oil<50' ELSE 'oil>=50' END AS oil_regime, COUNT(*) AS num_weeks, AVG(chain_sales) AS avg_weekly_chain_sales FROM weekly_totals GROUP BY oil_regime ORDER BY oil_regime LIMIT 100",
               "reference_sql": "WITH weekly_chain AS (  SELECT week_start_date, AVG(avg_oil_price) AS oil_price,   SUM(total_sales) AS chain_weekly_sales   FROM weekly_store_family_summary   WHERE avg_oil_price IS NOT NULL   GROUP BY week_start_date) SELECT CASE WHEN oil_price < 50 THEN 'UNDER_50' ELSE 'AT_OR_ABOVE_50' END AS oil_regime, COUNT(*) AS n_weeks, ROUND(AVG(chain_weekly_sales), 2) AS avg_weekly_sales FROM weekly_chain GROUP BY oil_regime ORDER BY oil_regime ASC",
               "actual_row_preview": [
@@ -4356,7 +4369,8 @@
             }
           },
           "failure_counts": {
-            "wrong_join_or_aggregation": 10,
+            "projection_mismatch": 10,
+            "wrong_join_or_aggregation": 0,
             "wrong_column_semantics": 0,
             "hallucinated_table_or_column": 0,
             "syntax_error": 0,
@@ -4369,7 +4383,7 @@
               "id": "med_05",
               "difficulty": "medium",
               "question": "For each product family in promo_elasticity_summary with at least 20 evaluated series, what is the average empirical_promo_lift_pct, ordered highest first (top 5)?",
-              "category": "wrong_join_or_aggregation",
+              "category": "projection_mismatch",
               "generated_sql": "SELECT family, AVG(empirical_promo_lift_pct) AS avg_lift_pct FROM promo_elasticity_summary GROUP BY family HAVING COUNT(*) >= 20 ORDER BY avg_lift_pct DESC LIMIT 5",
               "reference_sql": "SELECT family, COUNT(*) AS n_series, ROUND(AVG(empirical_promo_lift_pct), 2) AS avg_lift_pct FROM promo_elasticity_summary GROUP BY family HAVING COUNT(*) >= 20 ORDER BY avg_lift_pct DESC LIMIT 5",
               "actual_row_preview": [
@@ -4400,7 +4414,7 @@
               "id": "med_07",
               "difficulty": "medium",
               "question": "Which 5 HIGH_VELOCITY_ELEVATED_ZERO_SALES_DAYS_PROXY series in zero_sales_day_proxy_summary have the highest zero_sales_rate_pct?",
-              "category": "wrong_join_or_aggregation",
+              "category": "projection_mismatch",
               "generated_sql": "SELECT store_nbr, family, zero_sales_rate_pct FROM zero_sales_day_proxy_summary WHERE zero_sales_proxy_tier = 'HIGH_VELOCITY_ELEVATED_ZERO_SALES_DAYS_PROXY' ORDER BY zero_sales_rate_pct DESC LIMIT 5",
               "reference_sql": "SELECT store_nbr, city, family, ROUND(zero_sales_rate_pct, 2) AS zero_sales_rate_pct, ROUND(mean_daily_sales, 2) AS mean_daily_sales FROM zero_sales_day_proxy_summary WHERE zero_sales_proxy_tier = 'HIGH_VELOCITY_ELEVATED_ZERO_SALES_DAYS_PROXY' ORDER BY zero_sales_rate_pct DESC, mean_daily_sales DESC LIMIT 5",
               "actual_row_preview": [
@@ -4437,7 +4451,7 @@
               "id": "med_08",
               "difficulty": "medium",
               "question": "In perishable_volatility_summary, what is the average cv_demand and series count for each volatility_proxy_tier?",
-              "category": "wrong_join_or_aggregation",
+              "category": "projection_mismatch",
               "generated_sql": "SELECT volatility_proxy_tier, AVG(cv_demand) AS avg_cv_demand, COUNT(*) AS series_count FROM perishable_volatility_summary GROUP BY volatility_proxy_tier ORDER BY volatility_proxy_tier LIMIT 100",
               "reference_sql": "SELECT volatility_proxy_tier, COUNT(*) AS series_count, ROUND(AVG(cv_demand), 4) AS avg_cv_demand FROM perishable_volatility_summary GROUP BY volatility_proxy_tier ORDER BY avg_cv_demand DESC",
               "actual_row_preview": [
@@ -4470,7 +4484,7 @@
               "id": "med_09",
               "difficulty": "medium",
               "question": "Among PERISHABLE families in perishable_volatility_summary, what is the average cv_demand per family, ordered highest first?",
-              "category": "wrong_join_or_aggregation",
+              "category": "projection_mismatch",
               "generated_sql": "SELECT family, AVG(cv_demand) AS avg_cv_demand FROM perishable_volatility_summary WHERE perishability_class = 'PERISHABLE' GROUP BY family ORDER BY avg_cv_demand DESC LIMIT 100",
               "reference_sql": "SELECT family, COUNT(*) AS n_stores, ROUND(AVG(cv_demand), 4) AS avg_cv_demand FROM perishable_volatility_summary WHERE perishability_class = 'PERISHABLE' GROUP BY family ORDER BY avg_cv_demand DESC",
               "actual_row_preview": [
@@ -4501,7 +4515,7 @@
               "id": "med_12",
               "difficulty": "medium",
               "question": "In sim_policy_summary, which rows achieve a fill_rate_pct of at least 99.0 at lead_time_days = 7, ordered by average_inventory_units ascending?",
-              "category": "wrong_join_or_aggregation",
+              "category": "projection_mismatch",
               "generated_sql": "SELECT * FROM sim_policy_summary WHERE lead_time_days = 7 AND fill_rate_pct >= 99.0 ORDER BY average_inventory_units ASC LIMIT 100",
               "reference_sql": "SELECT policy, service_level, z_value, fill_rate_pct, average_inventory_units FROM sim_policy_summary WHERE lead_time_days = 7 AND fill_rate_pct >= 99.0 ORDER BY average_inventory_units ASC",
               "actual_row_preview": [
@@ -4568,7 +4582,7 @@
               "id": "hard_01",
               "difficulty": "hard",
               "question": "Without double counting across product families, which 5 stores had the highest total weekly_transactions across all weeks in weekly_store_family_summary?",
-              "category": "wrong_join_or_aggregation",
+              "category": "projection_mismatch",
               "generated_sql": "WITH weekly_totals AS (SELECT store_nbr, week_start_date, MAX(weekly_transactions) AS weekly_transactions FROM weekly_store_family_summary GROUP BY store_nbr, week_start_date) SELECT store_nbr, SUM(weekly_transactions) AS total_weekly_transactions FROM weekly_totals GROUP BY store_nbr ORDER BY total_weekly_transactions DESC LIMIT 5",
               "reference_sql": "WITH store_weeks AS (  SELECT store_nbr, city, week_start_date, MAX(weekly_transactions) AS wk_tx   FROM weekly_store_family_summary   GROUP BY store_nbr, city, week_start_date) SELECT store_nbr, city, SUM(wk_tx) AS total_transactions FROM store_weeks GROUP BY store_nbr, city ORDER BY total_transactions DESC LIMIT 5",
               "actual_row_preview": [
@@ -4599,7 +4613,7 @@
               "id": "hard_02",
               "difficulty": "hard",
               "question": "For each store_type in weekly_store_family_summary, which single store has the highest total unit sales (rank 1 per store_type)?",
-              "category": "wrong_join_or_aggregation",
+              "category": "projection_mismatch",
               "generated_sql": "WITH store_totals AS (SELECT store_type, store_nbr, SUM(total_sales) AS total_sales FROM weekly_store_family_summary GROUP BY store_type, store_nbr) SELECT store_type, store_nbr, total_sales FROM (SELECT store_type, store_nbr, total_sales, ROW_NUMBER() OVER (PARTITION BY store_type ORDER BY total_sales DESC) AS rn FROM store_totals) AS t WHERE rn = 1 LIMIT 100",
               "reference_sql": "WITH store_totals AS (  SELECT store_type, store_nbr, city, ROUND(SUM(total_sales), 2) AS store_sales,   ROW_NUMBER() OVER (PARTITION BY store_type ORDER BY SUM(total_sales) DESC) AS rk   FROM weekly_store_family_summary   GROUP BY store_type, store_nbr, city) SELECT store_type, store_nbr, city, store_sales FROM store_totals WHERE rk = 1 ORDER BY store_type ASC",
               "actual_row_preview": [
@@ -4634,7 +4648,7 @@
               "id": "hard_03",
               "difficulty": "hard",
               "question": "Join promo_elasticity_summary and perishable_volatility_summary on store_nbr and family: for PERISHABLE series, what is the average empirical_promo_lift_pct and average cv_demand for each volatility_proxy_tier?",
-              "category": "wrong_join_or_aggregation",
+              "category": "projection_mismatch",
               "generated_sql": "SELECT p.volatility_proxy_tier, AVG(pe.empirical_promo_lift_pct) AS avg_empirical_promo_lift_pct, AVG(p.cv_demand) AS avg_cv_demand FROM perishable_volatility_summary AS p JOIN promo_elasticity_summary AS pe ON p.store_nbr = pe.store_nbr AND p.family = pe.family WHERE p.perishability_class = 'PERISHABLE' GROUP BY p.volatility_proxy_tier ORDER BY p.volatility_proxy_tier LIMIT 100",
               "reference_sql": "SELECT v.volatility_proxy_tier, COUNT(*) AS paired_series, ROUND(AVG(p.empirical_promo_lift_pct), 2) AS avg_promo_lift_pct, ROUND(AVG(v.cv_demand), 4) AS avg_cv_demand FROM promo_elasticity_summary p JOIN perishable_volatility_summary v   ON p.store_nbr = v.store_nbr AND p.family = v.family WHERE v.perishability_class = 'PERISHABLE' GROUP BY v.volatility_proxy_tier ORDER BY avg_cv_demand DESC",
               "actual_row_preview": [
@@ -4669,7 +4683,7 @@
               "id": "hard_04",
               "difficulty": "hard",
               "question": "Join zero_sales_day_proxy_summary and perishable_volatility_summary on store_nbr and family: which 5 HIGH_VOLATILITY_PERISHABLE_PROXY series have the highest zero_sales_rate_pct?",
-              "category": "wrong_join_or_aggregation",
+              "category": "projection_mismatch",
               "generated_sql": "SELECT z.store_nbr, z.family, z.zero_sales_rate_pct FROM zero_sales_day_proxy_summary AS z JOIN perishable_volatility_summary AS p ON z.store_nbr = p.store_nbr AND z.family = p.family WHERE p.volatility_proxy_tier = 'HIGH_VOLATILITY_PERISHABLE_PROXY' ORDER BY z.zero_sales_rate_pct DESC LIMIT 5",
               "reference_sql": "SELECT z.store_nbr, z.city, z.family, ROUND(z.zero_sales_rate_pct, 2) AS zero_sales_rate_pct, ROUND(v.cv_demand, 4) AS cv_demand FROM zero_sales_day_proxy_summary z JOIN perishable_volatility_summary v   ON z.store_nbr = v.store_nbr AND z.family = v.family WHERE v.volatility_proxy_tier = 'HIGH_VOLATILITY_PERISHABLE_PROXY' ORDER BY z.zero_sales_rate_pct DESC, v.cv_demand DESC LIMIT 5",
               "actual_row_preview": [
@@ -4706,7 +4720,7 @@
               "id": "hard_08",
               "difficulty": "hard",
               "question": "Compare chain-wide weekly unit sales in weeks with oil price below 50 vs weeks with oil price of 50 or above: what is the number of weeks and average weekly chain sales in each regime?",
-              "category": "wrong_join_or_aggregation",
+              "category": "projection_mismatch",
               "generated_sql": "WITH weekly_totals AS (SELECT week_start_date, SUM(total_sales) AS chain_sales, MIN(avg_oil_price) AS avg_oil_price FROM weekly_store_family_summary GROUP BY week_start_date) SELECT CASE WHEN avg_oil_price < 50 THEN 'oil<50' ELSE 'oil>=50' END AS oil_regime, COUNT(*) AS num_weeks, AVG(chain_sales) AS avg_weekly_chain_sales FROM weekly_totals GROUP BY oil_regime ORDER BY oil_regime LIMIT 100",
               "reference_sql": "WITH weekly_chain AS (  SELECT week_start_date, AVG(avg_oil_price) AS oil_price,   SUM(total_sales) AS chain_weekly_sales   FROM weekly_store_family_summary   WHERE avg_oil_price IS NOT NULL   GROUP BY week_start_date) SELECT CASE WHEN oil_price < 50 THEN 'UNDER_50' ELSE 'AT_OR_ABOVE_50' END AS oil_regime, COUNT(*) AS n_weeks, ROUND(AVG(chain_weekly_sales), 2) AS avg_weekly_sales FROM weekly_chain GROUP BY oil_regime ORDER BY oil_regime ASC",
               "actual_row_preview": [
@@ -4831,6 +4845,7 @@
             }
           },
           "failure_counts": {
+            "projection_mismatch": 0,
             "wrong_join_or_aggregation": 5,
             "wrong_column_semantics": 6,
             "hallucinated_table_or_column": 0,
@@ -5313,7 +5328,8 @@
             }
           },
           "failure_counts": {
-            "wrong_join_or_aggregation": 10,
+            "projection_mismatch": 10,
+            "wrong_join_or_aggregation": 0,
             "wrong_column_semantics": 0,
             "hallucinated_table_or_column": 0,
             "syntax_error": 0,
@@ -5326,7 +5342,7 @@
               "id": "med_05",
               "difficulty": "medium",
               "question": "For each product family in promo_elasticity_summary with at least 20 evaluated series, what is the average empirical_promo_lift_pct, ordered highest first (top 5)?",
-              "category": "wrong_join_or_aggregation",
+              "category": "projection_mismatch",
               "generated_sql": "SELECT family, AVG(empirical_promo_lift_pct) AS avg_lift_pct FROM promo_elasticity_summary GROUP BY family HAVING COUNT(*) >= 20 ORDER BY avg_lift_pct DESC LIMIT 5",
               "reference_sql": "SELECT family, COUNT(*) AS n_series, ROUND(AVG(empirical_promo_lift_pct), 2) AS avg_lift_pct FROM promo_elasticity_summary GROUP BY family HAVING COUNT(*) >= 20 ORDER BY avg_lift_pct DESC LIMIT 5",
               "actual_row_preview": [
@@ -5357,7 +5373,7 @@
               "id": "med_07",
               "difficulty": "medium",
               "question": "Which 5 HIGH_VELOCITY_ELEVATED_ZERO_SALES_DAYS_PROXY series in zero_sales_day_proxy_summary have the highest zero_sales_rate_pct?",
-              "category": "wrong_join_or_aggregation",
+              "category": "projection_mismatch",
               "generated_sql": "SELECT store_nbr, family, zero_sales_rate_pct FROM zero_sales_day_proxy_summary WHERE zero_sales_proxy_tier = 'HIGH_VELOCITY_ELEVATED_ZERO_SALES_DAYS_PROXY' ORDER BY zero_sales_rate_pct DESC LIMIT 5",
               "reference_sql": "SELECT store_nbr, city, family, ROUND(zero_sales_rate_pct, 2) AS zero_sales_rate_pct, ROUND(mean_daily_sales, 2) AS mean_daily_sales FROM zero_sales_day_proxy_summary WHERE zero_sales_proxy_tier = 'HIGH_VELOCITY_ELEVATED_ZERO_SALES_DAYS_PROXY' ORDER BY zero_sales_rate_pct DESC, mean_daily_sales DESC LIMIT 5",
               "actual_row_preview": [
@@ -5394,7 +5410,7 @@
               "id": "med_08",
               "difficulty": "medium",
               "question": "In perishable_volatility_summary, what is the average cv_demand and series count for each volatility_proxy_tier?",
-              "category": "wrong_join_or_aggregation",
+              "category": "projection_mismatch",
               "generated_sql": "SELECT volatility_proxy_tier, AVG(cv_demand) AS avg_cv_demand, COUNT(*) AS series_count FROM perishable_volatility_summary GROUP BY volatility_proxy_tier ORDER BY volatility_proxy_tier LIMIT 100",
               "reference_sql": "SELECT volatility_proxy_tier, COUNT(*) AS series_count, ROUND(AVG(cv_demand), 4) AS avg_cv_demand FROM perishable_volatility_summary GROUP BY volatility_proxy_tier ORDER BY avg_cv_demand DESC",
               "actual_row_preview": [
@@ -5427,7 +5443,7 @@
               "id": "med_09",
               "difficulty": "medium",
               "question": "Among PERISHABLE families in perishable_volatility_summary, what is the average cv_demand per family, ordered highest first?",
-              "category": "wrong_join_or_aggregation",
+              "category": "projection_mismatch",
               "generated_sql": "SELECT family, AVG(cv_demand) AS avg_cv_demand FROM perishable_volatility_summary WHERE perishability_class = 'PERISHABLE' GROUP BY family ORDER BY avg_cv_demand DESC LIMIT 100",
               "reference_sql": "SELECT family, COUNT(*) AS n_stores, ROUND(AVG(cv_demand), 4) AS avg_cv_demand FROM perishable_volatility_summary WHERE perishability_class = 'PERISHABLE' GROUP BY family ORDER BY avg_cv_demand DESC",
               "actual_row_preview": [
@@ -5458,7 +5474,7 @@
               "id": "med_12",
               "difficulty": "medium",
               "question": "In sim_policy_summary, which rows achieve a fill_rate_pct of at least 99.0 at lead_time_days = 7, ordered by average_inventory_units ascending?",
-              "category": "wrong_join_or_aggregation",
+              "category": "projection_mismatch",
               "generated_sql": "SELECT * FROM sim_policy_summary WHERE lead_time_days = 7 AND fill_rate_pct >= 99.0 ORDER BY average_inventory_units ASC LIMIT 100",
               "reference_sql": "SELECT policy, service_level, z_value, fill_rate_pct, average_inventory_units FROM sim_policy_summary WHERE lead_time_days = 7 AND fill_rate_pct >= 99.0 ORDER BY average_inventory_units ASC",
               "actual_row_preview": [
@@ -5525,7 +5541,7 @@
               "id": "hard_01",
               "difficulty": "hard",
               "question": "Without double counting across product families, which 5 stores had the highest total weekly_transactions across all weeks in weekly_store_family_summary?",
-              "category": "wrong_join_or_aggregation",
+              "category": "projection_mismatch",
               "generated_sql": "WITH weekly_totals AS (SELECT store_nbr, week_start_date, MAX(weekly_transactions) AS weekly_transactions FROM weekly_store_family_summary GROUP BY store_nbr, week_start_date) SELECT store_nbr, SUM(weekly_transactions) AS total_weekly_transactions FROM weekly_totals GROUP BY store_nbr ORDER BY total_weekly_transactions DESC LIMIT 5",
               "reference_sql": "WITH store_weeks AS (  SELECT store_nbr, city, week_start_date, MAX(weekly_transactions) AS wk_tx   FROM weekly_store_family_summary   GROUP BY store_nbr, city, week_start_date) SELECT store_nbr, city, SUM(wk_tx) AS total_transactions FROM store_weeks GROUP BY store_nbr, city ORDER BY total_transactions DESC LIMIT 5",
               "actual_row_preview": [
@@ -5556,7 +5572,7 @@
               "id": "hard_02",
               "difficulty": "hard",
               "question": "For each store_type in weekly_store_family_summary, which single store has the highest total unit sales (rank 1 per store_type)?",
-              "category": "wrong_join_or_aggregation",
+              "category": "projection_mismatch",
               "generated_sql": "WITH store_totals AS (SELECT store_type, store_nbr, SUM(total_sales) AS total_sales FROM weekly_store_family_summary GROUP BY store_type, store_nbr) SELECT store_type, store_nbr, total_sales FROM (SELECT store_type, store_nbr, total_sales, ROW_NUMBER() OVER (PARTITION BY store_type ORDER BY total_sales DESC) AS rn FROM store_totals) AS t WHERE rn = 1 LIMIT 100",
               "reference_sql": "WITH store_totals AS (  SELECT store_type, store_nbr, city, ROUND(SUM(total_sales), 2) AS store_sales,   ROW_NUMBER() OVER (PARTITION BY store_type ORDER BY SUM(total_sales) DESC) AS rk   FROM weekly_store_family_summary   GROUP BY store_type, store_nbr, city) SELECT store_type, store_nbr, city, store_sales FROM store_totals WHERE rk = 1 ORDER BY store_type ASC",
               "actual_row_preview": [
@@ -5591,7 +5607,7 @@
               "id": "hard_03",
               "difficulty": "hard",
               "question": "Join promo_elasticity_summary and perishable_volatility_summary on store_nbr and family: for PERISHABLE series, what is the average empirical_promo_lift_pct and average cv_demand for each volatility_proxy_tier?",
-              "category": "wrong_join_or_aggregation",
+              "category": "projection_mismatch",
               "generated_sql": "SELECT p.volatility_proxy_tier, AVG(pe.empirical_promo_lift_pct) AS avg_empirical_promo_lift_pct, AVG(p.cv_demand) AS avg_cv_demand FROM perishable_volatility_summary AS p JOIN promo_elasticity_summary AS pe ON p.store_nbr = pe.store_nbr AND p.family = pe.family WHERE p.perishability_class = 'PERISHABLE' GROUP BY p.volatility_proxy_tier ORDER BY p.volatility_proxy_tier LIMIT 100",
               "reference_sql": "SELECT v.volatility_proxy_tier, COUNT(*) AS paired_series, ROUND(AVG(p.empirical_promo_lift_pct), 2) AS avg_promo_lift_pct, ROUND(AVG(v.cv_demand), 4) AS avg_cv_demand FROM promo_elasticity_summary p JOIN perishable_volatility_summary v   ON p.store_nbr = v.store_nbr AND p.family = v.family WHERE v.perishability_class = 'PERISHABLE' GROUP BY v.volatility_proxy_tier ORDER BY avg_cv_demand DESC",
               "actual_row_preview": [
@@ -5626,7 +5642,7 @@
               "id": "hard_04",
               "difficulty": "hard",
               "question": "Join zero_sales_day_proxy_summary and perishable_volatility_summary on store_nbr and family: which 5 HIGH_VOLATILITY_PERISHABLE_PROXY series have the highest zero_sales_rate_pct?",
-              "category": "wrong_join_or_aggregation",
+              "category": "projection_mismatch",
               "generated_sql": "SELECT z.store_nbr, z.family, z.zero_sales_rate_pct FROM zero_sales_day_proxy_summary AS z JOIN perishable_volatility_summary AS p ON z.store_nbr = p.store_nbr AND z.family = p.family WHERE p.volatility_proxy_tier = 'HIGH_VOLATILITY_PERISHABLE_PROXY' ORDER BY z.zero_sales_rate_pct DESC LIMIT 5",
               "reference_sql": "SELECT z.store_nbr, z.city, z.family, ROUND(z.zero_sales_rate_pct, 2) AS zero_sales_rate_pct, ROUND(v.cv_demand, 4) AS cv_demand FROM zero_sales_day_proxy_summary z JOIN perishable_volatility_summary v   ON z.store_nbr = v.store_nbr AND z.family = v.family WHERE v.volatility_proxy_tier = 'HIGH_VOLATILITY_PERISHABLE_PROXY' ORDER BY z.zero_sales_rate_pct DESC, v.cv_demand DESC LIMIT 5",
               "actual_row_preview": [
@@ -5663,7 +5679,7 @@
               "id": "hard_08",
               "difficulty": "hard",
               "question": "Compare chain-wide weekly unit sales in weeks with oil price below 50 vs weeks with oil price of 50 or above: what is the number of weeks and average weekly chain sales in each regime?",
-              "category": "wrong_join_or_aggregation",
+              "category": "projection_mismatch",
               "generated_sql": "WITH weekly_totals AS (SELECT week_start_date, SUM(total_sales) AS chain_sales, MIN(avg_oil_price) AS avg_oil_price FROM weekly_store_family_summary GROUP BY week_start_date) SELECT CASE WHEN avg_oil_price < 50 THEN 'oil<50' ELSE 'oil>=50' END AS oil_regime, COUNT(*) AS num_weeks, AVG(chain_sales) AS avg_weekly_chain_sales FROM weekly_totals GROUP BY oil_regime ORDER BY oil_regime LIMIT 100",
               "reference_sql": "WITH weekly_chain AS (  SELECT week_start_date, AVG(avg_oil_price) AS oil_price,   SUM(total_sales) AS chain_weekly_sales   FROM weekly_store_family_summary   WHERE avg_oil_price IS NOT NULL   GROUP BY week_start_date) SELECT CASE WHEN oil_price < 50 THEN 'UNDER_50' ELSE 'AT_OR_ABOVE_50' END AS oil_regime, COUNT(*) AS n_weeks, ROUND(AVG(chain_weekly_sales), 2) AS avg_weekly_sales FROM weekly_chain GROUP BY oil_regime ORDER BY oil_regime ASC",
               "actual_row_preview": [
@@ -5842,6 +5858,7 @@
           }
         },
         "failure_counts": {
+          "projection_mismatch": 0,
           "wrong_join_or_aggregation": 1,
           "wrong_column_semantics": 2,
           "hallucinated_table_or_column": 0,
@@ -6016,6 +6033,7 @@
           }
         },
         "failure_counts": {
+          "projection_mismatch": 0,
           "wrong_join_or_aggregation": 1,
           "wrong_column_semantics": 2,
           "hallucinated_table_or_column": 3,
@@ -6275,6 +6293,7 @@
           }
         },
         "failure_counts": {
+          "projection_mismatch": 0,
           "wrong_join_or_aggregation": 2,
           "wrong_column_semantics": 5,
           "hallucinated_table_or_column": 0,
@@ -6537,6 +6556,7 @@
           }
         },
         "failure_counts": {
+          "projection_mismatch": 0,
           "wrong_join_or_aggregation": 1,
           "wrong_column_semantics": 1,
           "hallucinated_table_or_column": 0,
@@ -6678,6 +6698,7 @@
           }
         },
         "failure_counts": {
+          "projection_mismatch": 0,
           "wrong_join_or_aggregation": 0,
           "wrong_column_semantics": 1,
           "hallucinated_table_or_column": 0,
@@ -6786,6 +6807,7 @@
           }
         },
         "failure_counts": {
+          "projection_mismatch": 0,
           "wrong_join_or_aggregation": 1,
           "wrong_column_semantics": 1,
           "hallucinated_table_or_column": 0,

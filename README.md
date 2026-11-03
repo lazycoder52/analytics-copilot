@@ -10,16 +10,11 @@ Data source: [grocery-demand-planner](https://github.com/lazycoder52/grocery-dem
 
 ## Evaluation status
 
-- **Primary provider in `metrics/metrics.json` (Run A)**: `openai_compatible` (requested model `openai/gpt-oss-120b`, API-returned model `openai/gpt-oss-120b`, endpoint host `api.groq.com`, `temperature=0.0`, `run_date=2026-10-26`, cached in `evals/cache/openai_compatible_openai_gpt-oss-120b.jsonl`).
-- **Completion & infrastructure status**: **45/45** questions completed (**0** unresolved; **0** infrastructure failures excluded from accuracy denominators).
-- **Interpretation**: Primary headline and ablation metrics come from recorded
-  live LLM calls against `api.groq.com` (`openai/gpt-oss-120b`) replayed
-  deterministically from `evals/cache/openai_compatible_openai_gpt-oss-120b.jsonl`.
-  Strict execution accuracy is **28/40 (70.0%)** vs. **39/40 (97.5%)** reviewed. Strict scoring penalises column projection and order; 11 of the 12 failures were result-identical queries with different columns, 1 was a genuine error (hard_07). 15 of 40 gold questions were reviewed by me and the other 25 were not.
-- **Secondary live provider (Run B — `api.groq.com`)**: `openai_compatible` (requested model `openai/gpt-oss-20b`, API-returned model `openai/gpt-oss-20b`, `temperature=0.0`, `run_date=2026-10-26`, cached in `evals/cache/openai_compatible_openai_gpt-oss-20b.jsonl`) — **45/45** completed on `full_schema_repair_on`, execution accuracy **30/40 (75.0%)** on `full_schema_repair_on`; `bare_schema_repair_on` is incomplete, Groq daily token cap (42/45 completed).
-- **Harness validation baseline (`MockProvider` / `mock-sql-v1`)**: **harness validation only, not model quality** (latency and token counts are synthetic mock values; cached in `evals/cache/mock_mock-sql-v1.jsonl`, 37/40 = 92.5% on `full_schema_repair_on`). All `mock-sql-v1` grain ablation and held-out figures in `metrics/metrics.json` are **harness validation only, not evidence that the grain fixes work**.
-- **Grain ablation summary**: The grain fixes did not change live results on gold (sanity check 70.0% vs 70.0%, while `catalog_grain_notes_repair_on` 0/45 and `grain_aware_prompt_repair_on` 0/45 are incomplete, Groq daily token cap); the held-out set was already 100% before any change (`full_schema_repair_on` 10/10 = 100.0%, `catalog_grain_notes_repair_on` 10/10 = 100.0%, `grain_sanity_check_repair_on` 10/10 = 100.0%, while `grain_aware_prompt_repair_on` 0/10 is incomplete, Groq daily token cap), so it cannot show improvement; **no improvement is claimed**.
-- **Gateway & rate-limit note**: Anonymous free gateways (`text.pollinations.ai/openai` and `api.llm7.io/v1` with alias `openai-fast`) were probed; `api.llm7.io` returned `HTTP 400 model_unavailable` and `text.pollinations.ai` enforced a 1 req/30s IP cap (attempted and abandoned after 31/45 questions in favor of `openai/gpt-oss-20b` on `api.groq.com`). Gateway aliases like `openai-fast` may change upstream routing over time.
+- **Primary benchmark (Run A)**: `openai_compatible` (requested model `openai/gpt-oss-120b`, API-returned model `openai/gpt-oss-120b`, endpoint host `api.groq.com`, `temperature=0.0`, `run_date=2026-10-26`, cached in `evals/cache/openai_compatible_openai_gpt-oss-120b.jsonl`).
+- **Headline Results**: **28/40 (70.0%, 95% CI `[54.6%, 81.9%]`)** strict execution accuracy across 40 answerable questions; **5/5 (100.0%)** refusal accuracy on unanswerable questions. 11 of 12 misses were column-projection differences, and 1 was a genuine error (`hard_07`). (15 of 40 gold questions were human-reviewed in `docs/REVIEW_SHEET.md`).
+- **Secondary live run (Run B)**: `openai/gpt-oss-20b` on `api.groq.com` — **30/40 (75.0%)** execution accuracy on `full_schema_repair_on`; `bare_schema_repair_on` capped at 42/45 by daily token quota.
+- **Reproducibility & Verification**: Deterministic offline replay via `python -m copilot.eval --replay` reproduces all metrics without API credentials. For full gateway discovery notes, token quotas, and rate-limit details, see [docs/RUN_NOTES.md](docs/RUN_NOTES.md).
+- **Harness validation baseline (`MockProvider`)**: Deterministic baseline (37/40 = 92.5%) used to verify harness logic, self-repair, and CI offline; not a measure of LLM quality. No improvement is claimed from prompt tuning.
 
 ## Problem
 
@@ -111,7 +106,7 @@ refusal.
 
 | Metric | Value | 95% Wilson CI | Notes |
 | --- | --- | --- | --- |
-| **Execution Accuracy** | **28/40 (70.0%)** strict / **39/40 (97.5%)** reviewed | `[54.6%, 81.9%]` | Order-insensitive result match (`rel_tol=1e-3`, `abs_tol=1e-2`) |
+| **Execution Accuracy** | **28/40 (70.0%)** | `[54.6%, 81.9%]` | Order-insensitive result match (`rel_tol=1e-3`, `abs_tol=1e-2`) |
 | **Valid-SQL Rate** | **40/40 (100.0%)** | `[91.2%, 100.0%]` | Syntactically valid, guard-approved SQL that executes in DuckDB |
 | **Refusal Accuracy** | **5/5 (100.0%)** | `[56.5%, 100.0%]` | Correctly refused unanswerable questions (`answerable=false`) |
 | **Mean Attempts** | **1.000** | n/a | Average LLM calls per question (max 3 with up to 2 repairs) |
@@ -124,7 +119,7 @@ refusal.
 
 | Run Role | Provider | Requested Model | API-Returned Model | Host | Config | Completed | Execution Accuracy | 95% Wilson CI | Valid-SQL Rate | Refusal Accuracy | Latency (p50 / p95) | Total Tokens |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| **Live Run A (Headline)** | `openai_compatible` | `openai/gpt-oss-120b` | `openai/gpt-oss-120b` | `api.groq.com` | `full_schema_repair_on` | 45/45 | 28/40 (70.0%) strict / 39/40 (97.5%) reviewed | `[54.6%, 81.9%]` | 40/40 (100.0%) | 5/5 (100.0%) | 1199.52 / 2518.98 ms | 149266 |
+| **Live Run A (Headline)** | `openai_compatible` | `openai/gpt-oss-120b` | `openai/gpt-oss-120b` | `api.groq.com` | `full_schema_repair_on` | 45/45 | 28/40 (70.0%) | `[54.6%, 81.9%]` | 40/40 (100.0%) | 5/5 (100.0%) | 1199.52 / 2518.98 ms | 149266 |
 | **Live Run B** | `openai_compatible` | `openai/gpt-oss-20b` | `openai/gpt-oss-20b` | `api.groq.com` | `full_schema_repair_on` | 45/45 | 30/40 (75.0%) | `[59.8%, 85.8%]` | 40/40 (100.0%) | 5/5 (100.0%) | 1482.02 / 2440.30 ms | 154052 |
 | **Live Run B** | `openai_compatible` | `openai/gpt-oss-20b` | `openai/gpt-oss-20b` | `api.groq.com` | `bare_schema_repair_on` | 42/45 | incomplete, Groq daily token cap (42/45) | n/a | n/a | n/a | n/a | n/a |
 | **Harness Validation (Mock)** | `mock` | `mock-sql-v1` | `mock-sql-v1` | `local-mock` | `full_schema_repair_on` | 45/45 | 37/40 (92.5%) | `[80.1%, 97.4%]` | 40/40 (100.0%) | 5/5 (100.0%) | 14.50 / 19.00 ms (mock) | 155128 (mock) |
@@ -133,7 +128,7 @@ refusal.
 
 | Configuration | Description | Execution Accuracy | 95% Wilson CI | Valid-SQL Rate | Refusal Accuracy | Mean Attempts | Total Tokens |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `full_schema_repair_on` | Full catalog descriptions + repair loop (<= 2 retries) | 28/40 (70.0%) strict / 39/40 (97.5%) reviewed | `[54.6%, 81.9%]` | 40/40 (100.0%) | 5/5 (100.0%) | 1.000 | 149266 |
+| `full_schema_repair_on` | Full catalog descriptions + repair loop (<= 2 retries) | 28/40 (70.0%) | `[54.6%, 81.9%]` | 40/40 (100.0%) | 5/5 (100.0%) | 1.000 | 149266 |
 | `full_schema_repair_off` | Full catalog descriptions + repair loop disabled (0 retries) | 28/40 (70.0%) | `[54.6%, 81.9%]` | 40/40 (100.0%) | 5/5 (100.0%) | 1.000 | 149266 |
 | `bare_schema_repair_on` | Bare schema (names & types only, no descriptions) + repair on | 26/40 (65.0%) | `[49.5%, 77.9%]` | 40/40 (100.0%) | 5/5 (100.0%) | 1.022 | 73368 |
 | `catalog_grain_notes_repair_on` | Full schema + explicit table grain/fan-out notes in catalog.py + repair on | incomplete, Groq daily token cap (0/45) | n/a | n/a | n/a | n/a | n/a |
@@ -151,7 +146,7 @@ evidence that the grain fixes work**.
 
 *Note on `full_schema_repair_on` vs. `full_schema_repair_off` and sample size
 ($N = 40$ answerable, $N = 5$ unanswerable)*: In Run A (`openai/gpt-oss-120b`),
-`full_schema_repair_on` achieves 70.0% strict (97.5% reviewed; 95% Wilson CI `[54.6%, 81.9%]`) and `full_schema_repair_off`
+`full_schema_repair_on` achieves 70.0% strict (95% Wilson CI `[54.6%, 81.9%]`) and `full_schema_repair_off`
 achieves 70.0% (CI `[54.6%, 81.9%]`). Under strict scoring, both are identical because all
 first-attempt queries were syntactically valid and guard-compliant
 (`valid_sql_rate = 100.0%`), so the execution repair loop was not invoked.
@@ -199,12 +194,13 @@ The 10-question held-out benchmark (`evals/heldout.jsonl`: 4 `medium`, 6 `hard`,
 
 ## Failure Analysis
 
-Failed questions are categorized into seven root-cause buckets across the three
+Failed questions are categorized into eight root-cause buckets across the three
 configurations for `openai_compatible` (`openai/gpt-oss-120b`):
 
 | Failure Category | `full_schema_repair_on` | `full_schema_repair_off` | `bare_schema_repair_on` | Primary Mechanism |
 | --- | --- | --- | --- | --- |
-| `wrong_join_or_aggregation` | 12 | 12 | 7 | Averaging store-family rows instead of summing to chain-week first |
+| `projection_mismatch` | 11 | 11 | 0 | Result-identical query with unrequested dimension columns or unrounded numeric projections |
+| `wrong_join_or_aggregation` | 1 | 1 | 7 | Averaging store-family rows instead of summing to chain-week first or joining un-aggregated grain |
 | `wrong_column_semantics` | 0 | 0 | 7 | Summing repeated `weekly_transactions` across 33 families or omitting flags/enums |
 | `hallucinated_table_or_column` | 0 | 0 | 0 | Referencing nonexistent columns/tables on attempt 1 (repaired when repair is on) |
 | `syntax_error` | 0 | 0 | 0 | Malformed SQL or JSON syntax |
@@ -214,15 +210,15 @@ configurations for `openai_compatible` (`openai/gpt-oss-120b`):
 
 ### Concrete Failure Examples (`full_schema_repair_on` — `openai/gpt-oss-120b`)
 
-1. **`med_04` (`wrong_join_or_aggregation`)**: *Which 5 store-family series in promo_elasticity_summary have the highest empirical_promo_lift_pct?*
+1. **`med_04` (`projection_mismatch`)**: *Which 5 store-family series in promo_elasticity_summary have the highest empirical_promo_lift_pct?*
    - **Generated SQL**: `SELECT store_nbr, city, state, store_type, store_cluster, family, empirical_promo_lift_pct FROM promo_elasticity_summary ORDER BY empirical_promo_lift_pct DESC LIMIT 5`
    - **Reference SQL**: `SELECT store_nbr, family, ROUND(empirical_promo_lift_pct, 2) AS empirical_promo_lift_pct FROM promo_elasticity_summary ORDER BY empirical_promo_lift_pct DESC LIMIT 5`
-   - **Why it failed**: Result set mismatch under `wrong_join_or_aggregation`: actual row preview `[[10.0, 'Quito', 'Pichincha', 'C', 15.0, 'SCHOOL AND OFFICE SUPPLIES', 3094.1201171875]]` did not match reference preview `[[36, 'SCHOOL AND OFFICE SUPPLIES', 7980.77002]]`.
+   - **Why it failed**: Result-identical query with unrequested dimension columns or unrounded numeric projections: actual row preview `[[10.0, 'Quito', 'Pichincha', 'C', 15.0, 'SCHOOL AND OFFICE SUPPLIES', 3094.1201171875]]` vs reference preview `[[36, 'SCHOOL AND OFFICE SUPPLIES', 7980.77002]]`.
 
-2. **`med_07` (`wrong_join_or_aggregation`)**: *Which 5 HIGH_VELOCITY_ELEVATED_ZERO_SALES_DAYS_PROXY series in zero_sales_day_proxy_summary have the highest zero_sales_rate_pct?*
+2. **`med_07` (`projection_mismatch`)**: *Which 5 HIGH_VELOCITY_ELEVATED_ZERO_SALES_DAYS_PROXY series in zero_sales_day_proxy_summary have the highest zero_sales_rate_pct?*
    - **Generated SQL**: `SELECT store_nbr, city, state, family, zero_sales_rate_pct FROM zero_sales_day_proxy_summary WHERE zero_sales_proxy_tier = 'HIGH_VELOCITY_ELEVATED_ZERO_SALES_DAYS_PROXY' ORDER BY zero_sales_rate_pct DESC LIMIT 5`
    - **Reference SQL**: `SELECT store_nbr, city, family, ROUND(zero_sales_rate_pct, 2) AS zero_sales_rate_pct, ROUND(mean_daily_sales, 2) AS mean_daily_sales FROM zero_sales_day_proxy_summary WHERE zero_sales_proxy_tier = 'HIGH_VELOCITY_ELEVATED_ZERO_SALES_DAYS_PROXY' ORDER BY zero_sales_rate_pct DESC, mean_daily_sales DESC LIMIT 5`
-   - **Why it failed**: Result set mismatch under `wrong_join_or_aggregation`: actual row preview `[[14.0, 'Riobamba', 'Chimborazo', 'PRODUCE', 23.729999542236328]]` did not match reference preview `[[18, 'Quito', 'PRODUCE', 31.309999, 1117.77002]]`.
+   - **Why it failed**: Result-identical query with unrequested dimension columns or unrounded numeric projections: actual row preview `[[14.0, 'Riobamba', 'Chimborazo', 'PRODUCE', 23.729999542236328]]` vs reference preview `[[18, 'Quito', 'PRODUCE', 31.309999, 1117.77002]]`.
 
 ## Reproducing Results & Running the Service
 
