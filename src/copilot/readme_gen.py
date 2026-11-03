@@ -97,12 +97,11 @@ def _render_eval_status_block(metrics: dict[str, Any]) -> list[str]:
     temp = metrics.get("temperature", 0.0)
     run_date = metrics.get("run_date", "2026-10-26")
     cache_file = metrics["cache_file"]
-    n_comp = metrics.get("n_completed", metrics["n_total"])
-    n_tot = metrics["n_total"]
     hl = metrics.get("headline", {})
     n_ans = metrics.get("n_answerable", 40)
     exec_acc_str = _fmt_pct(hl.get("execution_accuracy", 0.70))
     ci_str = _fmt_ci(hl.get("execution_wilson_95_ci", [0.546, 0.819]))
+    corr_cnt = hl.get("execution_correct", 28)
 
     lines = [
         "## Evaluation status",
@@ -113,10 +112,11 @@ def _render_eval_status_block(metrics: dict[str, Any]) -> list[str]:
             f"`temperature={temp}`, `run_date={run_date}`, cached in `{cache_file}`)."
         ),
         (
-            f"- **Headline Results**: **{hl.get('execution_correct', 28)}/{n_ans} ({exec_acc_str}, 95% CI `{ci_str}`)** "
-            "strict execution accuracy across 40 answerable questions; **5/5 (100.0%)** refusal accuracy on unanswerable questions. "
-            "11 of 12 misses were column-projection differences, and 1 was a genuine error (`hard_07`). "
-            "(15 of 40 gold questions were human-reviewed in `docs/REVIEW_SHEET.md`)."
+            f"- **Headline Results**: **{corr_cnt}/{n_ans} ({exec_acc_str}, 95% CI `{ci_str}`)** "
+            "strict execution accuracy across 40 answerable questions; **5/5 (100.0%)** refusal "
+            "accuracy on unanswerable questions. 11 of 12 misses were column-projection "
+            "differences, and 1 was a genuine error (`hard_07`). (15 of 40 gold questions were "
+            "human-reviewed in `docs/REVIEW_SHEET.md`)."
         ),
     ]
 
@@ -129,16 +129,22 @@ def _render_eval_status_block(metrics: dict[str, Any]) -> list[str]:
             bc_comp = bc.get("n_completed", bc["n_total"])
             bc_tot = bc["n_total"]
             if bc_comp < bc_tot:
-                bare_str = f"; `bare_schema_repair_on` capped at {bc_comp}/{bc_tot} by daily token quota"
+                bare_str = (
+                    f"; `bare_schema_repair_on` capped at {bc_comp}/{bc_tot} by daily token quota"
+                )
             else:
                 bare_str = (
                     f", and **{bc['execution_correct']}/{bc['n_answerable']} "
                     f"({_fmt_pct(bc['execution_accuracy'])})** on `bare_schema_repair_on`"
                 )
+        sec_acc_str = _fmt_pct(sec_hl["execution_accuracy"])
+        sec_corr = sec_hl["execution_correct"]
+        sec_ans = sec_hl["n_answerable"]
+        sec_cfg_name = sec["primary_config"]
         lines.append(
             f"- **Secondary live run (Run B)**: `{sec['model']}` on `{sec['base_url_host']}` — "
-            f"**{sec_hl['execution_correct']}/{sec_hl['n_answerable']} ({_fmt_pct(sec_hl['execution_accuracy'])})** "
-            f"execution accuracy on `{sec['primary_config']}`{bare_str}."
+            f"**{sec_corr}/{sec_ans} ({sec_acc_str})** execution accuracy on "
+            f"`{sec_cfg_name}`{bare_str}."
         )
 
     lines.append(
@@ -170,8 +176,9 @@ def _describe_failure_example(idx: int, ex: dict[str, Any]) -> list[str]:
         why = f"Execution failed or mismatched with error: `{err}`."
     elif cat == "projection_mismatch":
         why = (
-            "Result-identical query with unrequested dimension columns or unrounded numeric projections: "
-            f"actual row preview `{act_prev[:1]}` vs reference preview `{exp_prev[:1]}`."
+            "Result-identical query with unrequested dimension columns or unrounded numeric "
+            f"projections: actual row preview `{act_prev[:1]}` vs "
+            f"reference preview `{exp_prev[:1]}`."
         )
     elif qid == "hard_01":
         why = (
@@ -208,7 +215,6 @@ def _render_multi_provider_section(metrics: dict[str, Any]) -> list[str]:
     hl = metrics["headline"]
     n_ans = metrics["n_answerable"]
     n_unans = metrics["n_unanswerable"]
-    c_on = metrics.get("configurations", {}).get("full_schema_repair_on", {})
     live_a_exec = f"{hl['execution_correct']}/{n_ans} ({_fmt_pct(hl['execution_accuracy'])})"
     rows = [
         "### Multi-Provider & Harness Comparison",
@@ -699,14 +705,20 @@ def render_readme(metrics: dict[str, Any]) -> str:
             fc_on,
             fc_off,
             fc_bare,
-            "Result-identical query with unrequested dimension columns or unrounded numeric projections",
+            (
+                "Result-identical query with unrequested dimension columns or "
+                "unrounded numeric projections"
+            ),
         ),
         _fail_row(
             "wrong_join_or_aggregation",
             fc_on,
             fc_off,
             fc_bare,
-            "Averaging store-family rows instead of summing to chain-week first or joining un-aggregated grain",
+            (
+                "Averaging store-family rows instead of summing to chain-week first or "
+                "joining un-aggregated grain"
+            ),
         ),
         _fail_row(
             "wrong_column_semantics",
